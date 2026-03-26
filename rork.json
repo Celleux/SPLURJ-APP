@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "MoneyMind",
+      "path": "ios",
+      "framework": "swift"
+    }
+  ]
+}
