@@ -86,7 +86,7 @@ struct ChallengeCompletionView: View {
                     .scaleEffect(showContent ? 1 : 0.3)
                     .opacity(showContent ? 1 : 0)
 
-                    Text("Challenge Complete!")
+                    Text("Pact Complete!")
                         .font(Typography.displayLarge)
                         .foregroundStyle(.white)
                         .opacity(showContent ? 1 : 0)
@@ -108,7 +108,7 @@ struct ChallengeCompletionView: View {
                         .offset(y: showContent ? 0 : 20)
 
                     if currentUserIsSpectator {
-                        Text("The challenge is complete! You contributed $\(Int(currentUserSavings)).")
+                        Text("The pact is complete! You contributed $\(Int(currentUserSavings)).")
                             .font(Typography.bodyMedium)
                             .foregroundStyle(Theme.textSecondary)
                             .multilineTextAlignment(.center)
@@ -188,7 +188,7 @@ struct ChallengeCompletionView: View {
                 }
             }
 
-            Text("\(completedParticipants.count) Challenge Champion\(completedParticipants.count == 1 ? "" : "s")")
+            Text("\(completedParticipants.count) Pact Champion\(completedParticipants.count == 1 ? "" : "s")")
                 .font(Typography.labelMedium)
                 .foregroundStyle(Theme.gold)
         }
@@ -239,7 +239,7 @@ struct ChallengeCompletionView: View {
                 Image(systemName: "sparkles")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textMuted)
-                Text("Challenge your friends on MoneyMind")
+                Text("Start a pact with friends on MoneyMind")
                     .font(Typography.labelSmall)
                     .foregroundStyle(Theme.textMuted)
             }
@@ -291,7 +291,7 @@ struct ChallengeCompletionShareCard: View {
                     .font(.system(size: 48))
                     .foregroundStyle(Theme.gold)
 
-                Text("Challenge Complete!")
+                Text("Pact Complete!")
                     .font(Typography.displayMedium)
                     .foregroundStyle(.white)
 

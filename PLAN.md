@@ -1,64 +1,77 @@
-# Fix all 8 gaps from the PDF spec + Champion badge + Local notifications
+# Restructure Navigation: 6 Tabs — Home | Wallet | Pacts | Coach | Hub | Profile
 
+## Summary
 
-## Overview
-Address all 8 gaps identified between the PDF blueprint and the current implementation, add "Challenge Champion" badge to the profile, and add local notification placeholders for nudges/reactions/covers.
-
----
-
-### **Fix 1: "At Risk" state trigger at 8 PM**
-- Add a timer in the challenge detail screen that checks the current time
-- If it's past 8 PM and the current user hasn't checked in today, automatically set their status to "atRisk"
-- The yellow pulsing avatar ring already works — this just triggers the state change
-- Sync the updated status to CloudKit
-
-### **Fix 2: "Slipped" as a distinct status**
-- When a user taps "I slipped" or midnight passes without check-in, set status to "slipped" (not just lose a life and stay "active")
-- The "slipped" status persists for the rest of that day (red X on avatar)
-- Update the lives engine: after processing a slip, set status to "slipped" instead of "active"
-- Update the avatar ring logic and status labels to handle "slipped" distinctly (red ring + red X overlay)
-- The next day's check-in resets them to "active"
-
-### **Fix 3: Block nudges to shielded participants**
-- In the participant row, hide the "Nudge" button when a participant's status is "shielded"
-- Shielded participants are already protected — they just shouldn't receive nudge prompts
-
-### **Fix 4: On Thin Ice — ice crystal avatar overlay**
-- Replace the current small snowflake-on-red-circle with a more prominent ice crystal overlay on the avatar itself
-- Use a frosted/icy visual treatment: semi-transparent ice overlay with a snowflake icon directly on the avatar circle
-
-### **Fix 5: Local notifications for nudges, reactions, and covers**
-- Request notification permission on app launch
-- When a nudge is sent: schedule a local notification with text like "[emoji] [name] is checking on you! How's [challenge] going?"
-- When a "Cheer On" is sent: "[emoji] [name] is cheering you on!"
-- When a reaction is added: "[Name] reacted [emoji] to your check-in!"
-- When someone covers a friend: "[Name] sent you a life!"
-- These are local-only placeholders — real push notifications can be added later
-
-### **Fix 6: Activity feed entries for spectator/leave/captain events**
-- Add a new "activity event" type to the feed section
-- When someone leaves: show "[Name] stepped back from the challenge. Their $[X] stays with us."
-- When captain transfers: show "[Old captain] stepped back. [New captain] is now leading the challenge."
-- These appear inline in the Recent Activity section alongside check-ins
-
-### **Fix 7: "Challenge Champion" badge in profile**
-- Add a new badge definition: name "Challenge Champion", category "Skill", description "Completed a Friend Challenge", icon "trophy.fill"
-- When a challenge completes and the user's status becomes "completed", automatically award this badge
-- The badge appears in their existing badge collection on their profile
-
-### **Fix 8: Improved cover animation**
-- Replace the simple scale+opacity shield animation with a path-based animation
-- The shield icon starts at the giver's position, follows a curved arc, and lands on the receiver's avatar
-- Add a gold particle trail effect behind the moving shield
-- Spring animation on landing with a subtle glow
+Restructure the app from 5 tabs to 6 tabs, redistributing features from the old "Tools" and "Games" tabs into new dedicated tabs: **Pacts** (friend challenges), **Coach** (AI coach + crisis tools + impulse control), and **Hub** (games + spending tools).
 
 ---
 
-### Files that will be changed
-- **Lives engine** — Update slip logic to set "slipped" status
-- **Challenge detail screen** — At Risk timer, nudge guard for shielded, activity feed events, improved cover animation
-- **Avatar display** — Slipped state red X, On Thin Ice ice crystal overlay
-- **App entry point** — Request local notification permission
-- **Notification helper** — New utility for scheduling local notifications
-- **Badge definitions** — Add Challenge Champion badge
-- **Challenge completion logic** — Award Champion badge on completion
+## Features
+
+- **Pacts tab** — Dedicated first-class tab for the friend challenge system, rebranded from "Challenges" to "Pacts"
+- **Coach tab** — Emergency quick-access tools (SOS, Pause & Breathe, HALT Check) at the top, AI Money Coach as the main feature, plus impulse control tools and DNS blocking
+- **Hub tab** — All games content (quests, vault, cards, weekly challenge, leaderboard, stats) plus spending tools (Budget Tracker, Ghost Budget, Vibe Check)
+- **Renamed strings** — All user-facing "Challenge" text becomes "Pact" throughout the app
+- **Tools tab removed** — Its contents are fully redistributed across Coach and Hub
+
+---
+
+## Tab Bar (6 tabs, left to right)
+
+1. **Home** — house icon (unchanged)
+2. **Wallet** — wallet icon (unchanged)
+3. **Pacts** — person.2.fill icon — friend pact system
+4. **Coach** — brain.head.profile.fill icon — AI coach + crisis + impulse tools
+5. **Hub** — square.grid.2x2.fill icon — games + spending tools
+6. **Profile** — person.circle icon (unchanged)
+
+---
+
+## Pages / Screens
+
+### Pacts Tab (new)
+- Same content as the old ChallengesHubView, rebranded
+- Navigation title: "Pacts"
+- Empty state: "Start a Pact with friends to save money together"
+- Section headers: "Active Pacts", "Available Pacts"
+- CTA: "Start" / "Create a Pact"
+- Join section at top with 6-character invite code text field + "Join" button
+- No dismiss button (it's a tab now, not a fullScreenCover)
+
+### Coach Tab (new)
+- **Emergency Quick Access** — Three large always-visible buttons at top: SOS (red), Pause & Breathe (teal), HALT Check (gold)
+- **AI Money Coach** — Large prominent hero card opening the chat
+- **Impulse Control Tools** — 2×2 grid: Cool Down Timer, If-Then Plans, 1-Second Rule, Exercises (CBT & ACT)
+- **DNS Blocking** — Card shown only if not already set up
+- All tools open as fullScreenCovers (same pattern as old ToolkitView)
+
+### Hub Tab (new)
+- All existing Games content: player command bar, live ticker, today's missions, game cards (Quests, Vault), weekly challenge, unified progress, leaderboard, stats dashboard
+- **New "Spending Tools" section** at the bottom: Budget Tracker, Ghost Budget, Vibe Check in a 2×2 grid
+- Navigation title: "Hub"
+
+---
+
+## Changes
+
+### Files Modified
+- **ContentView.swift** — Update AppTab enum (6 cases), update TabView with 6 tabs
+- **GamesHubView.swift** — Rename struct to `HubView`, change nav title to "Hub", add spending tools section at bottom
+- **ChallengesHubView.swift** — Rename struct to `PactsView`, rebrand all user-facing "Challenge" → "Pact", remove dismiss toolbar button
+- **SplurjiMoodEngine.swift** — Update `.games` context references to `.hub`
+- **PaywallView.swift** — "Unlimited Challenges" → "Unlimited Pacts"
+- **ChallengeDetailView.swift** — User-facing "Challenge" strings → "Pact"
+- **ChallengeCompletionView.swift** — "Challenge Complete!" → "Pact Complete!" etc.
+- **ChallengeDetailView.swift** — "Challenge Calendar" → "Pact Calendar", "Leave Challenge" → "Leave Pact", alert text updates
+
+### Files Created
+- **Views/CoachTabView.swift** — New Coach tab with emergency tools, AI coach card, impulse control grid
+
+### Files Deleted
+- **Views/ToolkitView.swift** — All contents redistributed to CoachTabView and HubView
+
+### String Renames (user-facing only)
+- "Challenge" → "Pact" everywhere users see it
+- "Games" → "Hub" in navigation title
+- "Tools" → removed entirely
+- Internal variable names, model classes, file names, and CloudKit record types stay unchanged

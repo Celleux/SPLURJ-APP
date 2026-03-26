@@ -147,7 +147,7 @@ struct ChallengeDetailView: View {
                         Button(role: .destructive) {
                             showLeaveAlert = true
                         } label: {
-                            Label("Leave Challenge", systemImage: "rectangle.portrait.and.arrow.right")
+                            Label("Leave Pact", systemImage: "rectangle.portrait.and.arrow.right")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -245,7 +245,7 @@ struct ChallengeDetailView: View {
                 performLeaveChallenge()
             }
         } message: {
-            Text("You've saved $\(Int(currentUserSavings)) so far.\n\nYour savings stay in the group wallet and you can still watch the challenge as a spectator.")
+            Text("You've saved $\(Int(currentUserSavings)) so far.\n\nYour savings stay in the group wallet and you can still watch the pact as a spectator.")
         }
     }
 
@@ -258,7 +258,7 @@ struct ChallengeDetailView: View {
                 .foregroundStyle(Theme.textMuted)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("You are watching this challenge")
+                Text("You are watching this pact")
                     .font(Typography.headingSmall)
                     .foregroundStyle(Theme.textPrimary)
                 Text("You can still react, cheer on friends, and view stats")
@@ -362,7 +362,7 @@ struct ChallengeDetailView: View {
 
         let leaveEvent = ChallengeActivityEvent(
             challengeID: challengeID,
-            message: "\(me.displayName) stepped back from the challenge. Their $\(Int(currentUserSavings)) stays with us.",
+            message: "\(me.displayName) stepped back from the pact. Their $\(Int(currentUserSavings)) stays with us.",
             iconName: "arrow.right.circle"
         )
         modelContext.insert(leaveEvent)
@@ -384,7 +384,7 @@ struct ChallengeDetailView: View {
         if let captain = newCaptain {
             let transferEvent = ChallengeActivityEvent(
                 challengeID: challengeID,
-                message: "\(creator.displayName) stepped back. \(captain.displayName) is now leading the challenge.",
+                message: "\(creator.displayName) stepped back. \(captain.displayName) is now leading the pact.",
                 iconName: "star.circle"
             )
             modelContext.insert(transferEvent)
@@ -1192,7 +1192,7 @@ struct ChallengeDetailView: View {
                 HStack {
                     Image(systemName: "calendar")
                         .foregroundStyle(Theme.accent)
-                    Text("Challenge Calendar")
+                    Text("Pact Calendar")
                         .font(Typography.headingSmall)
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()

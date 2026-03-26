@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 enum SplurjiContext: String {
-    case home, games, quests, vault, onboarding, other
+    case home, hub, quests, vault, onboarding, other
 }
 
 @Observable
@@ -96,7 +96,7 @@ class SplurjiMoodEngine {
         case .vault:
             currentMood = .thinking
             moodMessage = "Ooh, let's see what cards you've got..."
-        case .games:
+        case .hub:
             currentMood = streakActive ? .happy : .encouraging
             moodMessage = streakActive ? "Let's keep this streak going!" : "Ready to play?"
         case .home:
@@ -153,7 +153,7 @@ class SplurjiMoodEngine {
                 "Scratch carefully... or go wild!",
                 "Ooh, shiny cards await!"
             ].randomElement()!
-        case .games:
+        case .hub:
             return [
                 "The arcade is calling!",
                 "Ready to level up?",

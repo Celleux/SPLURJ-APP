@@ -546,7 +546,7 @@ struct PaywallView: View {
     private let premiumFeatures: [PremiumFeature] = [
         PremiumFeature(icon: "sparkles", name: "Full Splurj Wrapped", subtitle: "Monthly & annual story recaps", tint: Theme.accent),
         PremiumFeature(icon: "eye.slash.fill", name: "Ghost Budget", subtitle: "Hidden budgets only you can see", tint: Theme.accentTertiary),
-        PremiumFeature(icon: "trophy.fill", name: "Unlimited Challenges", subtitle: "Access every savings challenge", tint: Theme.accent),
+        PremiumFeature(icon: "trophy.fill", name: "Unlimited Pacts", subtitle: "Access every savings pact", tint: Theme.accent),
         PremiumFeature(icon: "chart.bar.xaxis.ascending", name: "Premium Analytics", subtitle: "Deep spending insights & trends", tint: Theme.accent),
         PremiumFeature(icon: "person.2.fill", name: "Couple Mode", subtitle: "Shared budgets & goals with a partner", tint: Theme.accentTertiary),
         PremiumFeature(icon: "bolt.shield.fill", name: "Ad-Free Experience", subtitle: "Zero interruptions, full focus", tint: Theme.accent)

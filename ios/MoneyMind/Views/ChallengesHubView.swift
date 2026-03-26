@@ -1,17 +1,17 @@
 import SwiftUI
 import SwiftData
 
-struct ChallengesHubView: View {
+struct PactsView: View {
     @Query private var challenges: [SavingsChallenge]
     @Query private var quizResults: [QuizResult]
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     @Environment(PremiumManager.self) private var premiumManager
     @State private var vm = ChallengesViewModel()
     @State private var selectedType: ChallengeType?
     @State private var activeChallenge: SavingsChallenge?
     @State private var appeared = false
     @State private var showPaywall: Bool = false
+    @State private var joinCode: String = ""
 
     private var personality: MoneyPersonality {
         quizResults.first?.personality ?? .builder
@@ -29,6 +29,8 @@ struct ChallengesHubView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    joinPactSection
+
                     if activeChallenges.isEmpty {
                         emptyStateCard
                             .transition(.scale.combined(with: .opacity))
@@ -48,18 +50,9 @@ struct ChallengesHubView: View {
                 .padding(.bottom, 80)
             }
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Money Challenges")
+            .navigationTitle("Pacts")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(Typography.headingLarge)
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                }
-            }
             .fullScreenCover(item: $activeChallenge) { challenge in
                 challengeDestination(challenge)
             }
@@ -81,13 +74,52 @@ struct ChallengesHubView: View {
         }
     }
 
+    private var joinPactSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.badge.plus")
+                    .foregroundStyle(Theme.accent)
+                Text("Join a Pact")
+                    .font(Typography.headingMedium)
+                    .foregroundStyle(Theme.textPrimary)
+            }
+
+            HStack(spacing: 10) {
+                TextField("Enter 6-digit code", text: $joinCode)
+                    .font(.system(.body, design: .monospaced))
+                    .textCase(.uppercase)
+                    .textInputAutocapitalization(.characters)
+                    .padding(12)
+                    .background(Theme.elevated, in: .rect(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Theme.border, lineWidth: 0.5)
+                    )
+
+                Button {
+                    // Join logic placeholder
+                } label: {
+                    Text("Join")
+                        .font(Typography.headingSmall)
+                        .foregroundStyle(Theme.buttonTextOnAccent)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Theme.accentGradient, in: .rect(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .disabled(joinCode.count < 6)
+                .opacity(joinCode.count < 6 ? 0.5 : 1)
+            }
+        }
+    }
+
     private var emptyStateCard: some View {
         PersonalityEmptyStateView(
             personality: personality,
             icon: "trophy.fill",
             secondaryIcon: "flag.fill",
-            headline: "Ready to Challenge Yourself?",
-            subtext: "Pick a savings challenge and start\nbuilding your financial muscles"
+            headline: "Start a Pact",
+            subtext: "Start a Pact with friends to\nsave money together"
         )
         .frame(height: 340)
     }
@@ -121,7 +153,7 @@ struct ChallengesHubView: View {
             HStack(spacing: 8) {
                 Image(systemName: "star.fill")
                     .foregroundStyle(Theme.gold)
-                Text("Available Challenges")
+                Text("Available Pacts")
                     .font(Typography.headingMedium)
                     .foregroundStyle(Theme.textPrimary)
             }
@@ -151,13 +183,13 @@ struct ChallengesHubView: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.gold)
-                Text("Want more challenges?")
+                Text("Want more pacts?")
                     .font(Typography.headingMedium)
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
             }
 
-            Text("Free users can run 1 challenge at a time. Upgrade to Premium for unlimited simultaneous challenges.")
+            Text("Free users can run 1 pact at a time. Upgrade to Premium for unlimited simultaneous pacts.")
                 .font(Typography.bodySmall)
                 .foregroundStyle(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -168,7 +200,7 @@ struct ChallengesHubView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "crown.fill")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("Unlock Unlimited Challenges")
+                    Text("Unlock Unlimited Pacts")
                         .font(Typography.headingSmall)
                 }
                 .foregroundStyle(Theme.buttonTextOnAccent)
