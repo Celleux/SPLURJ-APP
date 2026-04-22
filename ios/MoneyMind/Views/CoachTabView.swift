@@ -22,13 +22,25 @@ struct CoachTabView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    emergencyQuickAccess
-                    aiCoachCard
-                    impulseControlSection
-                    if !blockingEnabled {
-                        dnsBlockingCard
+                VStack(alignment: .leading, spacing: 28) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeader(icon: "exclamationmark.shield.fill", title: "Right Now")
+                        emergencyQuickAccess
                     }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeader(icon: "calendar.badge.clock", title: "Plan Ahead")
+                        impulseControlSection
+                        if !blockingEnabled {
+                            dnsBlockingCard
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeader(icon: "sparkles", title: "Reflect & Grow")
+                        aiCoachCard
+                    }
+
                     crisisSupportLink
                 }
                 .padding(.horizontal)
@@ -59,39 +71,30 @@ struct CoachTabView: View {
     // MARK: - Emergency Quick Access
 
     private var emergencyQuickAccess: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Quick Access")
-                .font(Typography.labelSmall)
-                .foregroundStyle(Theme.textMuted)
-                .tracking(1.5)
-                .textCase(.uppercase)
-                .padding(.top, 4)
+        HStack(spacing: 10) {
+            EmergencyButton(
+                icon: "exclamationmark.shield.fill",
+                title: "SOS",
+                tint: Theme.danger,
+                index: 0,
+                appeared: appeared
+            ) { showEmergency = true }
 
-            HStack(spacing: 10) {
-                EmergencyButton(
-                    icon: "exclamationmark.shield.fill",
-                    title: "SOS",
-                    tint: Theme.danger,
-                    index: 0,
-                    appeared: appeared
-                ) { showEmergency = true }
+            EmergencyButton(
+                icon: "wind",
+                title: "Pause &\nBreathe",
+                tint: Theme.accentSecondary,
+                index: 1,
+                appeared: appeared
+            ) { showUrgeSurf = true }
 
-                EmergencyButton(
-                    icon: "wind",
-                    title: "Pause &\nBreathe",
-                    tint: Theme.accentSecondary,
-                    index: 1,
-                    appeared: appeared
-                ) { showUrgeSurf = true }
-
-                EmergencyButton(
-                    icon: "hand.raised.fill",
-                    title: "HALT\nCheck",
-                    tint: Theme.accent,
-                    index: 2,
-                    appeared: appeared
-                ) { showHALTCheck = true }
-            }
+            EmergencyButton(
+                icon: "hand.raised.fill",
+                title: "HALT\nCheck",
+                tint: Theme.accent,
+                index: 2,
+                appeared: appeared
+            ) { showHALTCheck = true }
         }
     }
 
@@ -140,8 +143,6 @@ struct CoachTabView: View {
 
     private var impulseControlSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(icon: "brain.head.profile.fill", title: "Impulse Control")
-
             LazyVGrid(columns: columns, spacing: 12) {
                 CoachToolCard(
                     icon: "timer",
