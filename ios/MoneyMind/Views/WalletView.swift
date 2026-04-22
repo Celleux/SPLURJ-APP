@@ -2,11 +2,31 @@ import SwiftUI
 import SwiftData
 import PhosphorSwift
 
+nonisolated enum WalletSegment: String, CaseIterable, Identifiable, Sendable {
+    case activity, budgets, tools
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .activity: "Activity"
+        case .budgets: "Budgets"
+        case .tools: "Tools"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .activity: "list.bullet.rectangle.fill"
+        case .budgets: "chart.pie.fill"
+        case .tools: "wand.and.stars"
+        }
+    }
+}
+
 struct WalletView: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
     @Query private var quizResults: [QuizResult]
     @State private var vm = WalletViewModel()
+    @State private var segment: WalletSegment = .activity
     @Environment(\.modelContext) private var modelContext
     @Environment(PremiumManager.self) private var premiumManager
 
@@ -50,16 +70,24 @@ struct WalletView: View {
                     } else {
                         VStack(spacing: 24) {
                             heroCounterCard
-                            walletVisualization
-                            statsRow
-                            savingsTrendChart
-                            budgetToolsSection
-                            recentTransactions
-                            projectionCard
+                            segmentPicker
+
+                            switch segment {
+                            case .activity:
+                                walletVisualization
+                                statsRow
+                                recentTransactions
+                            case .budgets:
+                                budgetToolsSection
+                            case .tools:
+                                savingsTrendChart
+                                projectionCard
+                            }
                         }
                         .padding(.horizontal)
                         .padding(.bottom, 120)
                         .padding(.top, 8)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: segment)
                     }
                 }
                 .scrollIndicators(.hidden)
@@ -194,6 +222,45 @@ struct WalletView: View {
                 .strokeBorder(Theme.gold.opacity(0.3), lineWidth: 1)
         )
         .symbolEffect(.pulse, options: .repeating, isActive: true)
+    }
+
+    // MARK: - Segment Picker
+
+    private var segmentPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(WalletSegment.allCases) { option in
+                let selected = option == segment
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        segment = option
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: option.icon)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(option.title)
+                            .font(Typography.labelMedium)
+                    }
+                    .foregroundStyle(selected ? Theme.buttonTextOnAccent : Theme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Group {
+                            if selected {
+                                Capsule().fill(Theme.accentGradient)
+                            } else {
+                                Capsule().fill(Color.clear)
+                            }
+                        }
+                    )
+                }
+                .buttonStyle(.plain)
+                .sensoryFeedback(.selection, trigger: segment)
+            }
+        }
+        .padding(4)
+        .background(Theme.elevated, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 0.5))
     }
 
     // MARK: - Wallet Visualization
