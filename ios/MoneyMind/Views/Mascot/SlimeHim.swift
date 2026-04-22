@@ -143,10 +143,39 @@ struct SlimeHimStage4: View {
                 Leaf(cx: 66, cy: 34, rx: 8, ry: 7, rotation: -18)
                 Leaf(cx: 94, cy: 34, rx: 8, ry: 7, rotation: 18)
             }
-            backwardsCap
+            bandana
             FaceHim(cy: 92, eyeGap: 22, eyeR: 6)
         }
         .frame(width: 160, height: 160)
+    }
+
+    private var bandana: some View {
+        ZStack {
+            Path { p in
+                p.move(to: CGPoint(x: 50, y: 82))
+                p.addQuadCurve(to: CGPoint(x: 110, y: 82), control: CGPoint(x: 80, y: 74))
+                p.addLine(to: CGPoint(x: 110, y: 89))
+                p.addQuadCurve(to: CGPoint(x: 50, y: 89), control: CGPoint(x: 80, y: 79))
+                p.closeSubpath()
+            }
+            .fill(Color(hex: 0x3F6A8F))
+            // White dots pattern
+            ForEach(0..<5, id: \.self) { i in
+                Circle()
+                    .fill(Color.white.opacity(0.75))
+                    .frame(width: 2.2)
+                    .offset(x: CGFloat(-24 + i * 12), y: 5)
+            }
+            // Knot on right side
+            Path { p in
+                p.move(to: CGPoint(x: 108, y: 82))
+                p.addLine(to: CGPoint(x: 124, y: 78))
+                p.addLine(to: CGPoint(x: 120, y: 90))
+                p.closeSubpath()
+            }
+            .fill(Color(hex: 0x2A4D6A))
+        }
+        .offset(x: -80, y: -80)
     }
 
     private var backwardsCap: some View {

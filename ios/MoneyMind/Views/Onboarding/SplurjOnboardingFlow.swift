@@ -134,31 +134,33 @@ private struct SplashScreen: View {
 
     var body: some View {
         TerrariumBG(withStump: true) {
-            GeometryReader { geo in
-                ZStack {
-                    VStack(spacing: 12) {
-                        Kicker("The Finance Garden", tracking: 2.5)
-                        SplurjWordmark(height: 56)
-                        Text(copy(.taglineHero, for: .her))
-                            .font(.system(size: 14))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(Theme.textSecondary)
-                            .padding(.horizontal, 32)
-                    }
-                    .offset(y: -geo.size.height * 0.18)
-
-                    SplurjMascot(variant: .her, stage: .leafy, size: 240)
-                        .offset(y: geo.size.height * 0.05)
-
-                    VStack(spacing: 10) {
-                        PrimaryCtaButton(title: "Plant your first seed", trailingSymbol: "\u{2192}") {
-                            onNext()
-                        }
-                        GhostLinkButton(title: "I already have an account") { }
-                    }
-                    .padding(.horizontal, 28)
-                    .offset(y: geo.size.height * 0.38)
+            VStack(spacing: 0) {
+                VStack(spacing: 10) {
+                    Kicker("The Finance Garden", tracking: 3.0)
+                    SplurjWordmark(height: 72)
+                        .shadow(color: Theme.glow.opacity(0.35), radius: 18, y: 0)
+                    Text(copy(.taglineHero, for: .her))
+                        .font(.system(size: 14))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Theme.textSecondary)
+                        .padding(.horizontal, 32)
                 }
+                .padding(.top, 24)
+
+                Spacer(minLength: 16)
+
+                SplurjMascot(variant: .her, stage: .leafy, size: 240)
+
+                Spacer(minLength: 20)
+
+                VStack(spacing: 12) {
+                    PrimaryCtaButton(title: "Plant your first seed", trailingSymbol: "\u{2192}") {
+                        onNext()
+                    }
+                    GhostLinkButton(title: "I already have an account") { }
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 40)
             }
             .opacity(appeared ? 1 : 0)
             .animation(.easeOut(duration: 0.5), value: appeared)

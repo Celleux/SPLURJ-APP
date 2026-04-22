@@ -255,8 +255,8 @@ struct ArmNub: View {
 
 struct FaceHer: View {
     var cy: CGFloat = 76
-    var eyeGap: CGFloat = 20
-    var eyeR: CGFloat = 6.5
+    var eyeGap: CGFloat = 22
+    var eyeR: CGFloat = 7.8
     var mouth: Mouth = .happy
     var blushColor: Color = Color(hex: 0xFFA8B4)
     var blinkClose: Double = 0    // 0 = open, 1 = closed
@@ -308,23 +308,38 @@ struct FaceHer: View {
 
     private func lash(cx: CGFloat, cy: CGFloat, mirror: Bool) -> some View {
         let flip: CGFloat = mirror ? -1 : 1
-        return Path { p in
-            // 3 short radial lashes at -20, 0, +20 degrees
-            let angles: [CGFloat] = [-0.35, 0, 0.35]
-            for a in angles {
-                let len: CGFloat = 4
-                let start = CGPoint(x: 0, y: 0)
-                let end = CGPoint(
-                    x: CGFloat(sin(Double(a))) * len * flip,
-                    y: -CGFloat(cos(Double(a))) * len
+        return ZStack {
+            // Upper-lid mascara line — thick curved sweep above the eye
+            Path { p in
+                p.move(to: CGPoint(x: -eyeR * 1.05 * flip, y: 0.8))
+                p.addQuadCurve(
+                    to: CGPoint(x: eyeR * 1.05 * flip, y: 0.8),
+                    control: CGPoint(x: 0, y: -eyeR * 0.55)
                 )
-                p.move(to: start)
-                p.addLine(to: end)
             }
+            .stroke(Color(hex: 0x1A0F08), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+
+            // 4 radial lashes flaring outward
+            Path { p in
+                let angles: [CGFloat] = [-0.55, -0.25, 0.05, 0.35]
+                for a in angles {
+                    let len: CGFloat = 6
+                    let start = CGPoint(
+                        x: CGFloat(sin(Double(a))) * (eyeR * 0.6) * flip,
+                        y: -CGFloat(cos(Double(a))) * (eyeR * 0.2)
+                    )
+                    let end = CGPoint(
+                        x: CGFloat(sin(Double(a))) * (len + eyeR * 0.6) * flip,
+                        y: -CGFloat(cos(Double(a))) * (len + eyeR * 0.2)
+                    )
+                    p.move(to: start)
+                    p.addLine(to: end)
+                }
+            }
+            .stroke(Color(hex: 0x1A0F08), style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
         }
-        .stroke(Color(hex: 0x1A0F08), style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
-        .frame(width: 14, height: 6)
-        .offset(x: cx - 80, y: cy - 80)
+        .frame(width: 22, height: 10)
+        .offset(x: cx - 80, y: cy - 80 - 1)
     }
 
     private var blushGroup: some View {
