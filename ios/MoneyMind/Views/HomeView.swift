@@ -17,6 +17,7 @@ struct HomeView: View {
     @State private var refreshRotation: Double = 0
     @Environment(\.modelContext) private var modelContext
     @Environment(PremiumManager.self) private var premiumManager
+    @Environment(HealthKitService.self) private var healthKit
 
     private var profile: UserProfile? { profiles.first }
     private var currencyCode: String { profile?.defaultCurrency ?? "USD" }
@@ -179,6 +180,12 @@ struct HomeView: View {
                     try? await Task.sleep(for: .seconds(0.4))
                     withAnimation(Theme.springSnappy) { isLoading = false }
                 }
+                Task {
+                    await healthKit.refresh()
+                    if let profile {
+                        healthKit.evaluateJITAI(profile: profile, modelContext: modelContext)
+                    }
+                }
             }
         }
     }
@@ -189,6 +196,10 @@ struct HomeView: View {
         VStack(spacing: 20) {
             greetingHeader
             heroSavedCard
+            HRVStateOfMindCard(service: healthKit) {
+                Task { _ = await healthKit.requestAuthorization() }
+            }
+            .staggerIn(appeared: appeared, delay: 0.06)
             QuestOfTheDayCard()
                 .staggerIn(appeared: appeared, delay: 0.08)
             spendingTimeline

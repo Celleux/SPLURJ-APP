@@ -7,6 +7,8 @@ struct SettingsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Environment(\.modelContext) private var modelContext
     @Environment(PremiumManager.self) private var premiumManager
+    @Environment(HealthKitService.self) private var healthKit
+    @State private var requestingHealthAuth: Bool = false
 
     @State private var showExportCSVShare = false
     @State private var showExportPDFShare = false
@@ -27,6 +29,7 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 appearanceSection
                 notificationsSection
+                healthWellnessSection
                 budgetPreferencesSection
                 accountSection
                 aboutSection
@@ -269,6 +272,110 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Health & Wellness
+
+    private var healthWellnessSection: some View {
+        SettingsSectionCard(title: "Health & Wellness", icon: "heart.text.square.fill", iconColor: Theme.accentSecondary) {
+            HStack(spacing: 14) {
+                SettingsIconBadge(icon: "waveform.path.ecg", color: Theme.accentSecondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Health")
+                        .font(Typography.bodyMedium)
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(healthAuthSubtitle)
+                        .font(Typography.labelSmall)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                healthAuthAction
+            }
+
+            if healthKit.isAuthorized {
+                SettingsDividerLine()
+
+                HStack(spacing: 14) {
+                    SettingsIconBadge(icon: "heart.fill", color: Theme.accentSecondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Latest HRV")
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text(hrvSubtitle)
+                            .font(Typography.labelSmall)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    if let latest = healthKit.latestHRV {
+                        Text("\(Int(latest)) ms")
+                            .font(Typography.labelMedium)
+                            .foregroundStyle(Theme.accentSecondary)
+                    } else {
+                        Text("\u{2014}")
+                            .font(Typography.labelMedium)
+                            .foregroundStyle(Theme.textMuted)
+                    }
+                }
+            }
+        }
+        .task {
+            if healthKit.isAuthorized {
+                await healthKit.refresh()
+            }
+        }
+    }
+
+    private var healthAuthSubtitle: String {
+        switch healthKit.authState {
+        case .authorized: "Connected \u{2014} HRV + State of Mind"
+        case .denied: "Access denied. Open the Health app to re-enable."
+        case .unavailable: "HealthKit isn't available on this device"
+        case .notDetermined: "Unlock HRV stress detection and mood logging"
+        }
+    }
+
+    private var hrvSubtitle: String {
+        if healthKit.recentHRV.isEmpty {
+            return "No samples in the last 7 days"
+        }
+        if healthKit.isStressDetected {
+            return "Dipped below your 7-day baseline"
+        }
+        return "Tracking \(healthKit.recentHRV.count)-day rolling baseline"
+    }
+
+    @ViewBuilder
+    private var healthAuthAction: some View {
+        switch healthKit.authState {
+        case .authorized:
+            Text("ON")
+                .font(Typography.labelSmall)
+                .foregroundStyle(Theme.accentSecondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Theme.accentSecondary.opacity(0.15), in: .capsule)
+        case .unavailable:
+            Text("N/A")
+                .font(Typography.labelSmall)
+                .foregroundStyle(Theme.textMuted)
+        case .denied, .notDetermined:
+            Button {
+                Task {
+                    requestingHealthAuth = true
+                    _ = await healthKit.requestAuthorization()
+                    requestingHealthAuth = false
+                }
+            } label: {
+                Text(requestingHealthAuth ? "Requesting\u{2026}" : "Connect")
+                    .font(Typography.labelSmall)
+                    .foregroundStyle(Theme.buttonTextOnAccent)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.accent, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .disabled(requestingHealthAuth)
         }
     }
 

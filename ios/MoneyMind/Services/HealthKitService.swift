@@ -1,45 +1,97 @@
 import Foundation
 import HealthKit
+import SwiftData
 
-nonisolated struct HRVDataPoint: Sendable {
+nonisolated struct HRVDataPoint: Sendable, Identifiable {
     let date: Date
     let value: Double
+    var id: Date { date }
 }
 
-class HealthKitService {
-    private let healthStore = HKHealthStore()
-    private var isAuthorized = false
+nonisolated enum HealthAuthState: Equatable, Sendable {
+    case notDetermined
+    case denied
+    case authorized
+    case unavailable
+}
 
-    var isHealthDataAvailable: Bool {
-        HKHealthStore.isHealthDataAvailable()
+@Observable
+final class HealthKitService: @unchecked Sendable {
+    @MainActor static let shared = HealthKitService()
+
+    private let healthStore = HKHealthStore()
+
+    var authState: HealthAuthState = .notDetermined
+    var recentHRV: [HRVDataPoint] = []
+    var latestHRV: Double?
+    var baselineHRV: Double = 0
+    var isRefreshing: Bool = false
+    var lastRefresh: Date?
+
+    private init() {
+        if !HKHealthStore.isHealthDataAvailable() {
+            authState = .unavailable
+        }
     }
 
+    var isStressDetected: Bool {
+        guard let latestHRV, baselineHRV > 0 else { return false }
+        return latestHRV < baselineHRV * 0.8
+    }
+
+    var isAuthorized: Bool { authState == .authorized }
+
+    // MARK: - Authorization
+
+    @MainActor
     func requestAuthorization() async -> Bool {
-        guard isHealthDataAvailable else { return false }
+        guard HKHealthStore.isHealthDataAvailable() else {
+            authState = .unavailable
+            return false
+        }
 
         let readTypes: Set<HKObjectType> = [
             HKQuantityType(.heartRateVariabilitySDNN),
-            HKCategoryType(.mindfulSession)
+            HKCategoryType(.mindfulSession),
+            HKObjectType.stateOfMindType()
         ]
 
-        var writeTypes: Set<HKSampleType> = [
-            HKCategoryType(.mindfulSession)
+        let writeTypes: Set<HKSampleType> = [
+            HKCategoryType(.mindfulSession),
+            HKObjectType.stateOfMindType()
         ]
-
-        writeTypes.insert(HKObjectType.stateOfMindType())
 
         do {
             try await healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
-            isAuthorized = true
+            authState = .authorized
+            await refresh()
             return true
         } catch {
+            authState = .denied
             return false
         }
     }
 
-    func fetchHRVData(days: Int = 7) async -> [HRVDataPoint] {
-        guard isHealthDataAvailable, isAuthorized else { return [] }
+    // MARK: - Refresh
 
+    @MainActor
+    func refresh() async {
+        guard authState == .authorized, !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        let points = await fetchHRVData(days: 7)
+        recentHRV = points
+        latestHRV = points.last?.value
+        if !points.isEmpty {
+            baselineHRV = points.reduce(0) { $0 + $1.value } / Double(points.count)
+        }
+        lastRefresh = Date()
+    }
+
+    // MARK: - Queries
+
+    private func fetchHRVData(days: Int = 7) async -> [HRVDataPoint] {
         let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
         let calendar = Calendar.current
         let endDate = Date()
@@ -51,7 +103,7 @@ class HealthKitService {
         let descriptor = HKSampleQueryDescriptor(
             predicates: [.quantitySample(type: hrvType, predicate: predicate)],
             sortDescriptors: [sortDescriptor],
-            limit: 100
+            limit: 200
         )
 
         do {
@@ -81,47 +133,52 @@ class HealthKitService {
         }
     }
 
-    @available(iOS 18.0, *)
-    func saveStateOfMind(valence: Double) async {
-        guard isHealthDataAvailable, isAuthorized else { return }
+    // MARK: - State of Mind
 
+    @MainActor
+    func saveStateOfMind(valence: Double, associations: [HKStateOfMind.Association] = [.money]) async {
+        guard authState == .authorized else { return }
+        let clamped = max(-1, min(1, valence))
         let sample = HKStateOfMind(
             date: Date(),
-            kind: .dailyMood,
-            valence: valence,
+            kind: .momentaryEmotion,
+            valence: clamped,
             labels: [],
-            associations: [.health]
+            associations: associations
         )
-
-        do {
-            try await healthStore.save(sample)
-        } catch {
-            // Silent fail
-        }
+        try? await healthStore.save(sample)
     }
 
-    static func generateDemoData(days: Int = 7) -> [HRVDataPoint] {
-        let calendar = Calendar.current
-        let now = Date()
-        let baseHRV = 42.0
-
-        return (0..<days).compactMap { i in
-            guard let date = calendar.date(byAdding: .day, value: -days + 1 + i, to: now) else { return nil }
-            let variation = Double.random(in: -8...8)
-            let trend = Double(i) * 0.3
-            let value = max(15, baseHRV + variation + trend)
-            return HRVDataPoint(date: date, value: value)
-        }
+    static func valence(for vibe: VibeType) -> Double {
+        Double(vibe.sentiment)
     }
 
-    static func mapStarRatingToValence(_ stars: Int) -> Double {
-        switch stars {
-        case 1: return -0.8
-        case 2: return -0.4
-        case 3: return 0.0
-        case 4: return 0.4
-        case 5: return 0.8
-        default: return 0.0
-        }
+    // MARK: - JITAI
+
+    @MainActor
+    func evaluateJITAI(profile: UserProfile, modelContext: ModelContext) {
+        guard profile.notificationsEnabled, profile.jitaiAdaptiveNotif else { return }
+        guard isStressDetected else { return }
+        guard !alreadyNudgedToday() else { return }
+
+        NotificationService.shared.createInAppNotification(
+            type: .jitaiNudge,
+            title: "Low HRV detected",
+            body: "Your heart-rate variability dipped below your baseline. Take two minutes for a breathing exercise before any big spending decision.",
+            deepLink: .home,
+            modelContext: modelContext
+        )
+        markNudgedToday()
+    }
+
+    private let nudgeKey = "splurj.healthkit.lastHRVNudge"
+
+    private func alreadyNudgedToday() -> Bool {
+        guard let last = UserDefaults.standard.object(forKey: nudgeKey) as? Date else { return false }
+        return Calendar.current.isDateInToday(last)
+    }
+
+    private func markNudgedToday() {
+        UserDefaults.standard.set(Date(), forKey: nudgeKey)
     }
 }

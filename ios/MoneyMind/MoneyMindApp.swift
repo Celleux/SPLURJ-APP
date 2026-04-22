@@ -5,6 +5,7 @@ import SwiftData
 struct SplurjApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var premiumManager = PremiumManager()
+    @State private var healthKit = HealthKitService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -20,10 +21,12 @@ struct SplurjApp: App {
                 }
             }
             .environment(premiumManager)
+            .environment(healthKit)
             .preferredColorScheme(.dark)
             .onAppear {
                 SoundManager.shared.preload()
                 ChallengeNotificationService.requestPermission()
+                Task { await healthKit.refresh() }
             }
         }
         .modelContainer(for: [

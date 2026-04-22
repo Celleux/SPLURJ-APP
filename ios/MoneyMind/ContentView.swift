@@ -79,6 +79,11 @@ struct ContentView: View {
                             categoryName: tx.category
                         )
                         modelContext.insert(entry)
+                        Task {
+                            await HealthKitService.shared.saveStateOfMind(
+                                valence: HealthKitService.valence(for: vibe)
+                            )
+                        }
                         showVibeCheck = false
                         vibeCheckTransaction = nil
                     },
