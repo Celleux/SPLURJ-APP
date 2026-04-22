@@ -15,6 +15,8 @@ struct SplurjProfileView: View {
     var streak: Int = 23
     var totalSaved: Int = 247
     var purchasesResisted: Int = 38
+    var earnedBadges: Set<BadgeID> = [.streak7, .save100, .pactFirst, .onboard]
+    var equippedCosmetics: Set<CosmeticID> = []
     var onChangeVariant: () -> Void = {}
     var onEditPersonality: () -> Void = {}
     var onOpenSettings: () -> Void = {}
@@ -30,6 +32,7 @@ struct SplurjProfileView: View {
                     }
                     heroCard
                     statsGrid
+                    badgesStrip
                     journeyPreview
                     settingsLinks
                     Spacer(minLength: 60)
@@ -38,6 +41,36 @@ struct SplurjProfileView: View {
                 .padding(.top, 12)
             }
         }
+    }
+
+    private var badgesStrip: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Kicker("Badges \u{00B7} \(earnedBadges.count) / \(BadgeID.allCases.count)",
+                       color: Theme.textMuted)
+                Spacer()
+                Text("See all")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.honey)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(BadgeID.allCases) { id in
+                        VStack(spacing: 4) {
+                            SplurjBadge(id: id, size: 64, locked: !earnedBadges.contains(id))
+                            Text(id.name)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                                .lineLimit(1)
+                                .frame(width: 76)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border, lineWidth: 1))
     }
 
     private func closeBar(onDismiss: @escaping () -> Void) -> some View {
@@ -81,7 +114,13 @@ struct SplurjProfileView: View {
                         .trim(from: 0, to: xpProgress)
                         .stroke(Theme.honey, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                    SplurjMascot(variant: variant, stage: stage, personality: personality, size: 170)
+                    SplurjMascot(
+                        variant: variant,
+                        stage: stage,
+                        personality: personality,
+                        cosmetics: equippedCosmetics,
+                        size: 170
+                    )
                 }
                 .frame(width: 200, height: 200)
 

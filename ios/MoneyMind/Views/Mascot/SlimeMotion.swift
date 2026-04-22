@@ -221,6 +221,7 @@ struct EvolutionCeremony: View {
     let onComplete: () -> Void
 
     @State private var phase: Double = 0
+    @State private var fireCoins: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -258,6 +259,9 @@ struct EvolutionCeremony: View {
                     .opacity(reduceMotion ? 1 : max(0, 1 - (phase - 0.55) * 2.5))
                     .shadow(color: Theme.honey.opacity(0.7), radius: 10)
             }
+
+            // Coin burst fires as the new stage reveals
+            CoinBurstOverlay(fire: $fireCoins, count: 16, color: Theme.honey)
         }
         .frame(width: 160, height: 160)
         .onAppear {
@@ -267,12 +271,12 @@ struct EvolutionCeremony: View {
                 withAnimation(.easeInOut(duration: 0.9)) {
                     phase = 1.0
                 }
-                // Haptic at peak
+                // Haptic at peak + coin burst
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    // Pattern matches UIImpactFeedbackGenerator medium
                     #if os(iOS)
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     #endif
+                    fireCoins = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.95) {
                     onComplete()
