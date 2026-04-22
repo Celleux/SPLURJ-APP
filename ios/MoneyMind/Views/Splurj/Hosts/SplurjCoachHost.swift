@@ -3,15 +3,20 @@ import SwiftData
 
 // MARK: - Splurj Coach host
 //
-// Renders SplurjCoachView and wires SOS → UrgeSurfView fullScreenCover.
-// Other impulse-control tools still live in the legacy CoachTabView —
-// a later pass will consolidate.
+// Renders SplurjCoachView and wires every tool tile to its existing
+// production view via fullScreenCover. All impulse-control tooling
+// stays accessible — only the visual shell changed.
 
 struct SplurjCoachHost: View {
     @Query private var profiles: [UserProfile]
     @Environment(HealthKitService.self) private var healthKit
 
-    @State private var showUrgeSurf = false
+    @State private var activeTool: Tool?
+
+    enum Tool: String, Identifiable {
+        case sos, urgeSurf, halt, coolDown, ifThen, oneSec, act, aiCoach, dnsBlocking
+        var id: String { rawValue }
+    }
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -26,17 +31,46 @@ struct SplurjCoachHost: View {
         return "\(Int(ms.rounded()))ms"
     }
 
+    // Below ~35ms SDNN is commonly flagged as elevated stress.
+    private var isAllClear: Bool {
+        guard let ms = healthKit.latestHRV else { return true }
+        return ms >= 35
+    }
+
     var body: some View {
         SplurjCoachView(
             variant: variant,
             level: level,
             equippedCosmetics: equippedCosmetics,
-            isAllClear: true,
+            isAllClear: isAllClear,
             hrv: hrvText,
-            onOpenSOS: { showUrgeSurf = true }
+            onOpenSOS:     { activeTool = .sos },
+            onUrgeSurf:    { activeTool = .urgeSurf },
+            onHALT:        { activeTool = .halt },
+            onCoolDown:    { activeTool = .coolDown },
+            onIfThen:      { activeTool = .ifThen },
+            onOneSec:      { activeTool = .oneSec },
+            onACT:         { activeTool = .act },
+            onAICoach:     { activeTool = .aiCoach },
+            onDNSBlocking: { activeTool = .dnsBlocking }
         )
-        .fullScreenCover(isPresented: $showUrgeSurf) {
-            UrgeSurfView(siriTriggered: false)
+        .fullScreenCover(item: $activeTool) { tool in
+            destination(for: tool)
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for tool: Tool) -> some View {
+        switch tool {
+        case .sos:          EmergencyCrisisView()
+        case .urgeSurf:     UrgeSurfView(siriTriggered: false)
+        case .halt:         HALTCheckView()
+        case .coolDown:     CoolingOffView()
+        case .ifThen:       ImplementationIntentionsView()
+        case .oneSec:       OneSecBreathingGuideView()
+        case .act:          ACTExercisesView()
+        case .aiCoach:      CoachChatView()
+        case .dnsBlocking:  DNSBlockingWizardView()
         }
     }
 }

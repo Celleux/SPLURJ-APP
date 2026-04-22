@@ -13,6 +13,14 @@ struct SplurjCoachView: View {
     var isAllClear: Bool = true
     var hrv: String = "68ms"
     var onOpenSOS: () -> Void = {}
+    var onUrgeSurf: () -> Void = {}
+    var onHALT: () -> Void = {}
+    var onCoolDown: () -> Void = {}
+    var onIfThen: () -> Void = {}
+    var onOneSec: () -> Void = {}
+    var onACT: () -> Void = {}
+    var onAICoach: () -> Void = {}
+    var onDNSBlocking: () -> Void = {}
 
     var body: some View {
         ZStack {
@@ -22,12 +30,15 @@ struct SplurjCoachView: View {
                     SplurjTopBar(title: "Coach", variant: variant, level: level) {
                         SplurjMascotPlaceholder(variant: variant)
                     }
-                    Group {
+                    VStack(spacing: 22) {
                         if isAllClear {
                             allClearBody
                         } else {
-                            aiAndToolsBody
+                            spikeBanner
                         }
+                        emergencyRow
+                        aiCoachHero
+                        impulseGrid
                     }
                     .padding(.horizontal, 22)
                     Spacer(minLength: 100)
@@ -99,23 +110,37 @@ struct SplurjCoachView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border, lineWidth: 1))
     }
 
-    // MARK: - AI coach + tools body (engaged state)
+    // MARK: - Spike banner (engaged state)
 
-    private var aiAndToolsBody: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            emergencyRow
-            aiCoachHero
-            impulseGrid
+    private var spikeBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Theme.danger)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Spike detected")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(Theme.textPrimary)
+                Text("HRV dip · breathe before the next tap.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
         }
+        .padding(12)
+        .background(Theme.danger.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.danger.opacity(0.4), lineWidth: 1))
     }
+
+    // MARK: - Tool sections
 
     private var emergencyRow: some View {
         VStack(alignment: .leading, spacing: 10) {
             Kicker("Right now", color: Theme.danger)
             HStack(spacing: 10) {
                 emergencyTile(title: "SOS", systemImage: "exclamationmark.shield.fill", tint: Theme.danger, action: onOpenSOS)
-                emergencyTile(title: "Pause &\nBreathe", systemImage: "wind", tint: Theme.accentSecondary, action: {})
-                emergencyTile(title: "HALT\nCheck", systemImage: "hand.raised.fill", tint: Theme.honey, action: {})
+                emergencyTile(title: "Urge\nSurf", systemImage: "wind", tint: Theme.accentSecondary, action: onUrgeSurf)
+                emergencyTile(title: "HALT\nCheck", systemImage: "hand.raised.fill", tint: Theme.honey, action: onHALT)
             }
         }
     }
@@ -145,7 +170,7 @@ struct SplurjCoachView: View {
     private var aiCoachHero: some View {
         VStack(alignment: .leading, spacing: 10) {
             Kicker("Reflect & grow", color: Theme.accentSecondary)
-            Button { } label: {
+            Button { onAICoach() } label: {
                 HStack(spacing: 14) {
                     ZStack {
                         Circle()
@@ -186,16 +211,17 @@ struct SplurjCoachView: View {
         VStack(alignment: .leading, spacing: 10) {
             Kicker("Plan ahead", color: Theme.glow)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                toolTile(icon: "timer", title: "Cool Down", sub: "Wait it out with a countdown timer")
-                toolTile(icon: "lightbulb.fill", title: "If-Then Plan", sub: "Pre-set your response to triggers")
-                toolTile(icon: "lungs.fill", title: "1-Second Rule", sub: "Pause before tempting apps")
-                toolTile(icon: "figure.mind.and.body", title: "Exercises", sub: "CBT & ACT techniques")
+                toolTile(icon: "timer", title: "Cool Down", sub: "Wait it out with a countdown timer", action: onCoolDown)
+                toolTile(icon: "lightbulb.fill", title: "If-Then Plan", sub: "Pre-set your response to triggers", action: onIfThen)
+                toolTile(icon: "lungs.fill", title: "1-Second Rule", sub: "Pause before tempting apps", action: onOneSec)
+                toolTile(icon: "figure.mind.and.body", title: "Exercises", sub: "CBT & ACT techniques", action: onACT)
+                toolTile(icon: "shield.lefthalf.filled", title: "Block Apps", sub: "DNS wizard for tempting sites", action: onDNSBlocking)
             }
         }
     }
 
-    private func toolTile(icon: String, title: String, sub: String) -> some View {
-        Button { } label: {
+    private func toolTile(icon: String, title: String, sub: String, action: @escaping () -> Void) -> some View {
+        Button { action() } label: {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .bold))

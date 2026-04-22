@@ -289,6 +289,18 @@ struct TerrariumBG<Content: View>: View {
 
     var body: some View {
         ZStack {
+            // Base gradient — paints first so glows can overlay it.
+            LinearGradient(
+                colors: [
+                    Color(hex: 0x0F2820),
+                    Color(hex: 0x0A1612),
+                    Color(hex: 0x050C0A)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
             // Bottom green glow pool
             RadialGradient(
                 colors: [Theme.glow.opacity(0.30 * intensity), .clear],
@@ -306,19 +318,6 @@ struct TerrariumBG<Content: View>: View {
                 endRadius: 280
             )
             .ignoresSafeArea()
-
-            // Base gradient
-            LinearGradient(
-                colors: [
-                    Color(hex: 0x0F2820),
-                    Color(hex: 0x0A1612),
-                    Color(hex: 0x050C0A)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .blendMode(.plusDarker)
 
             FireflyField(
                 points: fireflies.map { (x: $0.0, y: $0.1, opacity: $0.2 * intensity) }
