@@ -1,51 +1,91 @@
 import SwiftUI
 
-// MARK: - Splurj Pacts — v2
+// MARK: - Splurj Pacts — v2 (canonical port of explorations/v2-pacts.jsx)
 //
-// Port of explorations/v2-pacts.jsx. Hero strip with combined pot
-// + New-pact button, segmented Active / Invites / History, pact cards
-// with overlapping partner avatars, "ON TRACK / AT RISK" pill, and a
-// streak bar.
+// Combined-pot hero + 3-segment (Active · N / Invites · N / History).
+// PactCards show overlapping partner avatars, ON TRACK / AT RISK pill,
+// title, sub, day-dot streak bar, and pot amount.
 
 struct SplurjPactsView: View {
     var variant: SplurjVariant = .her
     var level: Int = 7
+    var equippedCosmetics: Set<CosmeticID> = []
+
+    var combinedPot: Int = 0
+    var activeCount: Int = 0
+    var invitesCount: Int = 0
+    var friendCount: Int = 0
+    var currencySymbol: String = "$"
+
+    var activePacts: [PactCardData] = []
+    var invites: [InviteData] = []
+    var historyCompleted: Int = 0
+    var historyWon: Int = 0
+    var historyEarned: Int = 0
+
+    var onNewPact: () -> Void = {}
+    var onOpenProfile: () -> Void = {}
+    var onAcceptInvite: (String) -> Void = { _ in }
+    var onDeclineInvite: (String) -> Void = { _ in }
+    var onOpenPact: (String) -> Void = { _ in }
 
     @State private var segment: PactSegment = .active
 
     nonisolated enum PactSegment: String, CaseIterable, Identifiable, Sendable {
         case active, invites, history
         var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .active:  "Active · 3"
-            case .invites: "Invites · 1"
-            case .history: "History"
-            }
+    }
+
+    struct PactCardData: Identifiable, Hashable {
+        let id: String
+        let title: String
+        let sub: String
+        let partners: [Partner]
+        let streakDay: Int
+        let totalDays: Int
+        let pot: Int
+        let onTrack: Bool
+
+        struct Partner: Hashable {
+            let initial: String
+            let tone: Tone
+            enum Tone: Hashable { case pink, blue, green, honey, petal }
         }
+    }
+
+    struct InviteData: Identifiable, Hashable {
+        let id: String
+        let fromInitial: String
+        let fromName: String
+        let description: String
     }
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
-                    SplurjTopBar(title: "Pacts", variant: variant, level: level) {
+                    SplurjTopBar(
+                        title: "Pacts",
+                        variant: variant,
+                        level: level,
+                        stateDotColor: Theme.glow,
+                        onAvatarTap: onOpenProfile
+                    ) {
                         SplurjMascotPlaceholder(variant: variant)
                     }
 
                     heroStrip
                         .padding(.horizontal, 22)
 
-                    segmentPicker
+                    segmented
                         .padding(.horizontal, 22)
 
                     Group {
                         switch segment {
-                        case .active:  activeList
-                        case .invites: invitesList
-                        case .history: historyContent
+                        case .active:  activeSection
+                        case .invites: invitesSection
+                        case .history: historySection
                         }
                     }
                     .padding(.horizontal, 22)
@@ -57,24 +97,24 @@ struct SplurjPactsView: View {
         }
     }
 
-    // MARK: - Hero strip
+    // MARK: - Hero
 
     private var heroStrip: some View {
-        HStack(alignment: .top, spacing: 0) {
+        HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Kicker("Combined pot", tracking: 1.6)
-                Text("$340")
+                Kicker("Combined pot", color: Theme.honey, tracking: 2.0)
+                Text("\(currencySymbol)\(combinedPot)")
                     .font(.system(size: 32, weight: .black, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
-                Text("3 active pacts · 2 friends")
+                Text("\(activeCount) active pact\(activeCount == 1 ? "" : "s") \u{00B7} \(friendCount) friend\(friendCount == 1 ? "" : "s")")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textSecondary)
             }
             Spacer()
-            Button { } label: {
+            Button(action: onNewPact) {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .black))
+                        .font(.system(size: 12, weight: .black))
                     Text("New pact")
                         .font(.system(size: 12, weight: .heavy))
                 }
@@ -90,23 +130,20 @@ struct SplurjPactsView: View {
                 colors: [Theme.honey.opacity(0.15), Theme.honey.opacity(0.03)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             ),
-            in: RoundedRectangle(cornerRadius: 22)
+            in: RoundedRectangle(cornerRadius: 20)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Theme.honey.opacity(0.27), lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.honey.opacity(0.28), lineWidth: 1))
     }
 
-    private var segmentPicker: some View {
+    // MARK: - Segmented
+
+    private var segmented: some View {
         HStack(spacing: 4) {
             ForEach(PactSegment.allCases) { s in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        segment = s
-                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { segment = s }
                 } label: {
-                    Text(s.label)
+                    Text(label(for: s))
                         .font(.system(size: 12, weight: .heavy))
                         .foregroundStyle(segment == s ? Theme.textPrimary : Theme.textSecondary)
                         .frame(maxWidth: .infinity)
@@ -122,188 +159,282 @@ struct SplurjPactsView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.border, lineWidth: 1))
     }
 
+    private func label(for s: PactSegment) -> String {
+        switch s {
+        case .active:  activeCount  > 0 ? "Active \u{00B7} \(activeCount)"   : "Active"
+        case .invites: invitesCount > 0 ? "Invites \u{00B7} \(invitesCount)" : "Invites"
+        case .history: "History"
+        }
+    }
+
     // MARK: - Active
 
-    private var activeList: some View {
+    private var activeSection: some View {
         VStack(spacing: 10) {
-            PactCard(
-                title: "No scroll-shop after 10pm",
-                sub: "Lock your cart between 10pm–7am. Break it, Sam wins the pot.",
-                partners: [.init(initial: "M", color: Theme.petal), .init(initial: "S", color: Theme.sky)],
-                streak: 18, days: 30, pot: 120, onTrack: true
-            )
-            PactCard(
-                title: "Save $50/week, 8 weeks",
-                sub: "Both hit every week, you both get your money back + a bonus leaf.",
-                partners: [.init(initial: "M", color: Theme.petal), .init(initial: "J", color: Theme.glow)],
-                streak: 5, days: 8, pot: 160, onTrack: true
-            )
-            PactCard(
-                title: "No DoorDash in November",
-                sub: "You slipped twice. One more and Maya keeps the pot.",
-                partners: [.init(initial: "M", color: Theme.petal), .init(initial: "A", color: Theme.honey)],
-                streak: 22, days: 30, pot: 60, onTrack: false
-            )
+            if activePacts.isEmpty {
+                emptyActiveState
+            } else {
+                ForEach(activePacts) { pact in
+                    pactCard(pact)
+                }
+            }
+        }
+    }
+
+    private var emptyActiveState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(Theme.textMuted)
+            Text("No active pacts yet.")
+                .font(.system(size: 14, weight: .heavy))
+                .foregroundStyle(Theme.textPrimary)
+            Text("Make a 30-day pact with someone you trust. Both keep it \u{2192} you both earn.")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            Button(action: onNewPact) {
+                Text("Invite a friend")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(Color(hex: 0x1A1208))
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                    .background(Theme.honey, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+
+    private func pactCard(_ pact: PactCardData) -> some View {
+        let statusColor = pact.onTrack ? Theme.glow : Theme.honey
+        return Button { onOpenPact(pact.id) } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center) {
+                    partnerStack(pact.partners)
+                    Spacer()
+                    Text(pact.onTrack ? "ON TRACK" : "AT RISK")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .tracking(1.4)
+                        .foregroundStyle(statusColor)
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(statusColor.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().strokeBorder(statusColor.opacity(0.4), lineWidth: 1))
+                }
+                Text(pact.title)
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundStyle(Theme.textPrimary)
+                Text(pact.sub)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack {
+                    Text("DAY \(pact.streakDay)/\(pact.totalDays)")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .tracking(1.4)
+                        .foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    Text("POT \u{00B7} \(currencySymbol)\(pact.pot)")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(Theme.honey)
+                }
+                .padding(.top, 2)
+
+                streakDots(day: pact.streakDay, total: pact.totalDays, color: statusColor)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.border, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func partnerStack(_ partners: [PactCardData.Partner]) -> some View {
+        HStack(spacing: -8) {
+            ForEach(Array(partners.enumerated()), id: \.offset) { idx, p in
+                Text(p.initial)
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(Color(hex: 0x0B1614))
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RadialGradient(
+                            colors: color(for: p.tone),
+                            center: UnitPoint(x: 0.35, y: 0.30),
+                            startRadius: 0, endRadius: 22
+                        ),
+                        in: Circle()
+                    )
+                    .overlay(Circle().strokeBorder(Theme.background, lineWidth: 2))
+                    .zIndex(Double(-idx))
+            }
+        }
+    }
+
+    private func color(for tone: PactCardData.Partner.Tone) -> [Color] {
+        switch tone {
+        case .pink:   [Theme.petal, Color(hex: 0xB87FA0)]
+        case .blue:   [Theme.sky, Color(hex: 0x5A84B0)]
+        case .green:  [Theme.glow, Color(hex: 0x4A8F3A)]
+        case .honey:  [Theme.honey, Color(hex: 0xB8871E)]
+        case .petal:  [Theme.petal, Color(hex: 0xCA8FA8)]
+        }
+    }
+
+    private func streakDots(day: Int, total: Int, color: Color) -> some View {
+        HStack(spacing: 2) {
+            ForEach(0..<max(1, total), id: \.self) { i in
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(i < day ? color : Color.white.opacity(0.08))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 6)
+                    .shadow(
+                        color: (i < day && i == day - 1) ? color : .clear,
+                        radius: 3
+                    )
+            }
         }
     }
 
     // MARK: - Invites
 
-    private var invitesList: some View {
+    private var invitesSection: some View {
         VStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    PartnerAvatar(.init(initial: "S", color: Theme.sky), size: 40)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Sam invited you")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("\u{201C}Skip the morning latte, 14 days, $30 stake\u{201D}")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
+            if invites.isEmpty {
+                VStack(spacing: 6) {
+                    Image(systemName: "envelope")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Theme.textMuted)
+                    Text("No invites right now.")
+                        .font(.system(size: 12.5, weight: .heavy))
+                        .foregroundStyle(Theme.textSecondary)
+                    Text("Share your referral code in Settings to invite a friend.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textMuted)
+                        .multilineTextAlignment(.center)
                 }
-                HStack(spacing: 6) {
-                    Button {} label: {
-                        Text("Accept")
-                            .font(.system(size: 12, weight: .heavy))
-                            .foregroundStyle(Color(hex: 0x0B1614))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Theme.glow, in: RoundedRectangle(cornerRadius: 10))
-                    }
-                    .buttonStyle(.plain)
-                    Button {} label: {
-                        Text("Decline")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Color.clear, in: RoundedRectangle(cornerRadius: 10))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .strokeBorder(Theme.border, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+            } else {
+                ForEach(invites) { inv in
+                    inviteCard(inv)
                 }
             }
-            .padding(14)
-            .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.border, lineWidth: 1))
         }
+    }
+
+    private func inviteCard(_ inv: InviteData) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                Text(inv.fromInitial)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(Color(hex: 0x0B1614))
+                    .frame(width: 40, height: 40)
+                    .background(
+                        RadialGradient(
+                            colors: [Theme.sky, Color(hex: 0x5A84B0)],
+                            center: UnitPoint(x: 0.35, y: 0.30),
+                            startRadius: 0, endRadius: 26
+                        ),
+                        in: Circle()
+                    )
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("\(inv.fromName) invited you")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("\u{201C}\(inv.description)\u{201D}")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            HStack(spacing: 6) {
+                Button { onAcceptInvite(inv.id) } label: {
+                    Text("Accept")
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundStyle(Color(hex: 0x0B1614))
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background(Theme.glow, in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                Button { onDeclineInvite(inv.id) } label: {
+                    Text("Decline")
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background(Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 12)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.border, lineWidth: 1))
     }
 
     // MARK: - History
 
-    private var historyContent: some View {
+    private var historySection: some View {
         VStack(spacing: 10) {
-            Text("\u{1F331}")
-                .font(.system(size: 36))
-                .padding(.top, 12)
-            Text("12 pacts completed · 8 won · $680 earned")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-    }
-}
-
-// MARK: - Pact card
-
-private struct PactCard: View {
-    let title: String
-    let sub: String
-    let partners: [PactPartner]
-    let streak: Int
-    let days: Int
-    let pot: Int
-    let onTrack: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                HStack(spacing: -8) {
-                    ForEach(Array(partners.enumerated()), id: \.offset) { _, p in
-                        PartnerAvatar(p, size: 34)
-                            .overlay(Circle().strokeBorder(Theme.background, lineWidth: 2))
-                    }
+            if historyCompleted == 0 {
+                VStack(spacing: 8) {
+                    Text("\u{1F331}")
+                        .font(.system(size: 34))
+                    Text("No pacts completed yet.")
+                        .font(.system(size: 12.5, weight: .heavy))
+                        .foregroundStyle(Theme.textSecondary)
+                    Text("Finish your first and it lives here.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textMuted)
                 }
-                Spacer()
-                Pill(onTrack ? "ON TRACK" : "AT RISK", color: onTrack ? Theme.glow : Theme.honey)
-            }
-            Text(title)
-                .font(.system(size: 16, weight: .heavy))
-                .foregroundStyle(Theme.textPrimary)
-            Text(sub)
-                .font(.system(size: 11.5))
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack {
-                Kicker("Day \(streak)/\(days)", color: Theme.textMuted, tracking: 1.4)
-                Spacer()
-                Text("POT · $\(pot)")
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .tracking(1.0)
-                    .foregroundStyle(Theme.honey)
-            }
-            .padding(.top, 2)
-
-            HStack(spacing: 2) {
-                ForEach(0..<days, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(i < streak ? (onTrack ? Theme.glow : Theme.honey) : Color.white.opacity(0.08))
-                        .frame(height: 6)
-                        .shadow(
-                            color: (i < streak && i == streak - 1) ? (onTrack ? Theme.glow : Theme.honey) : .clear,
-                            radius: 4
-                        )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+            } else {
+                VStack(spacing: 6) {
+                    Text("\u{1F331}")
+                        .font(.system(size: 30))
+                    Text("\(historyCompleted) pacts completed \u{00B7} \(historyWon) won \u{00B7} \(currencySymbol)\(historyEarned) earned")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
             }
         }
-        .padding(16)
-        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.border, lineWidth: 1))
-    }
-}
-
-struct PactPartner {
-    let initial: String
-    let color: Color
-}
-
-private struct PartnerAvatar: View {
-    let partner: PactPartner
-    let size: CGFloat
-
-    init(_ partner: PactPartner, size: CGFloat) {
-        self.partner = partner
-        self.size = size
-    }
-
-    var body: some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [partner.color, partner.color.opacity(0.55)],
-                    center: UnitPoint(x: 0.35, y: 0.3),
-                    startRadius: 0,
-                    endRadius: size
-                )
-            )
-            .frame(width: size, height: size)
-            .overlay(
-                Text(partner.initial)
-                    .font(.system(size: size * 0.45, weight: .black))
-                    .foregroundStyle(Color(hex: 0x0B1614))
-            )
     }
 }
 
 #if DEBUG
-#Preview("Splurj Pacts") {
-    SplurjPactsView()
+#Preview("Pacts · active") {
+    SplurjPactsView(
+        level: 7,
+        combinedPot: 340,
+        activeCount: 3,
+        invitesCount: 1,
+        friendCount: 2,
+        activePacts: [
+            .init(id: "p1", title: "No scroll-shop after 10pm",
+                  sub: "Lock your cart between 10pm\u{2013}7am. Break it, Sam wins the pot.",
+                  partners: [.init(initial: "M", tone: .pink), .init(initial: "S", tone: .blue)],
+                  streakDay: 18, totalDays: 30, pot: 120, onTrack: true),
+            .init(id: "p2", title: "Save $50/week, 8 weeks",
+                  sub: "Both hit every week, you both get your money back + a bonus leaf.",
+                  partners: [.init(initial: "M", tone: .pink), .init(initial: "J", tone: .green)],
+                  streakDay: 5, totalDays: 8, pot: 160, onTrack: true),
+            .init(id: "p3", title: "No DoorDash in November",
+                  sub: "You slipped twice. One more and Maya keeps the pot.",
+                  partners: [.init(initial: "M", tone: .pink), .init(initial: "A", tone: .honey)],
+                  streakDay: 22, totalDays: 30, pot: 60, onTrack: false),
+        ]
+    )
 }
+#Preview("Pacts · empty") { SplurjPactsView() }
 #endif

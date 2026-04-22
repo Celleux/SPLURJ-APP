@@ -20,6 +20,7 @@ struct SplurjHomeHost: View {
     @State private var showAddExpense = false
     @State private var showUrgeSurf = false
     @State private var showCheckIn = false
+    @State private var showProfile = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -72,7 +73,8 @@ struct SplurjHomeHost: View {
             onFeed:    { showLogWin = true },
             onWater:   { showAddExpense = true },
             onBreathe: { showUrgeSurf = true },
-            onBed:     { showCheckIn = true }
+            onBed:     { showCheckIn = true },
+            onOpenProfile: { showProfile = true }
         )
         .task {
             await healthKit.refresh()
@@ -90,6 +92,11 @@ struct SplurjHomeHost: View {
         }
         .fullScreenCover(isPresented: $showCheckIn) {
             SiriCheckInView()
+        }
+        .sheet(isPresented: $showProfile) {
+            SplurjProfileHost()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 }

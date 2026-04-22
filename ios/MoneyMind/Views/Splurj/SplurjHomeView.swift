@@ -17,6 +17,7 @@ struct SplurjHomeView: View {
     var onWater: () -> Void = {}
     var onBreathe: () -> Void = {}
     var onBed: () -> Void = {}
+    var onOpenProfile: () -> Void = {}
 
     @State private var segment: HomeSegment = .today
     @State private var mascotMood: SlimeMood = .happy
@@ -46,7 +47,8 @@ struct SplurjHomeView: View {
                         title: "Hub",
                         variant: variant,
                         level: level,
-                        stateDotColor: Theme.glow
+                        stateDotColor: Theme.glow,
+                        onAvatarTap: onOpenProfile
                     ) {
                         SplurjMascotPlaceholder(variant: variant)
                     }
