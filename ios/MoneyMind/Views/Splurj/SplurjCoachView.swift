@@ -399,7 +399,7 @@ struct SplurjSOSView: View {
 struct SplurjInAppBanner: View {
     var variant: SplurjVariant = .her
     var title: String
-    var body: String
+    var message: String
     var color: Color = Theme.honey
 
     var body: some View {
@@ -457,7 +457,7 @@ struct SplurjInAppBanner: View {
     VStack {
         SplurjInAppBanner(
             title: "Splurj flinched.",
-            body: "It\u{2019}s 11:23pm — her least favorite hour for your cart.",
+            message: "It\u{2019}s 11:23pm — her least favorite hour for your cart.",
             color: Theme.danger
         )
         .padding()

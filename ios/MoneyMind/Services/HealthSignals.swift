@@ -10,7 +10,7 @@ import Foundation
 // Services/HealthKitService.swift). Android stub lives elsewhere and
 // would plug in via a separate conforming type.
 
-public protocol HealthSignalsProvider: Sendable {
+protocol HealthSignalsProvider: Sendable {
     var isAvailable: Bool { get async }
     var authState: HealthAuthState { get async }
 
@@ -30,9 +30,9 @@ public protocol HealthSignalsProvider: Sendable {
     func writeStateOfMind(valence: Double) async
 }
 
-public enum HealthSignals {
+enum HealthSignals {
     /// Default provider — wraps HealthKitService on iOS.
-    public static let shared: HealthSignalsProvider = AppleHealthSignals()
+    static let shared: HealthSignalsProvider = AppleHealthSignals()
 }
 
 // MARK: - Apple Health implementation
