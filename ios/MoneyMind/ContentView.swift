@@ -17,19 +17,19 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house", value: .home) {
-                HomeView()
+                SplurjHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             Tab("Coach", systemImage: "brain.head.profile.fill", value: .coach) {
-                CoachTabView()
+                SplurjCoachHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             Tab("Wallet", systemImage: "wallet.bifold", value: .wallet) {
-                WalletView()
+                SplurjWalletHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             Tab("Pacts", systemImage: "person.2.fill", value: .pacts) {
-                PactsView()
+                SplurjPactsHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             Tab("Hub", systemImage: "square.grid.2x2.fill", value: .hub) {
