@@ -45,6 +45,7 @@ struct SplurjTopBar<Mascot: View>: View {
     var level: Int
     var xpProgress: Double = 0.68            // 0–1, fills the gold ring
     var stateDotColor: Color = Theme.glow    // green = calm, honey = alert, orange = at risk
+    var onAvatarTap: (() -> Void)? = nil
     @ViewBuilder var mascot: () -> Mascot
 
     var body: some View {
@@ -57,13 +58,42 @@ struct SplurjTopBar<Mascot: View>: View {
 
             Spacer()
 
-            avatar
+            if let tap = onAvatarTap {
+                Button(action: tap) { avatar }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open profile")
+            } else {
+                avatar
+            }
         }
         .padding(.horizontal, 22)
         .padding(.top, 12)
     }
 
     private var avatar: some View {
+        SplurjTopBarAvatar(
+            variant: variant,
+            level: level,
+            xpProgress: xpProgress,
+            stateDotColor: stateDotColor,
+            mascot: mascot
+        )
+    }
+}
+
+// MARK: - Reusable avatar (mascot ring + level badge + state dot)
+//
+// Extracted so the money-home header can drop in the same avatar next to
+// the multi-line greeting, without needing the full SplurjTopBar chrome.
+
+struct SplurjTopBarAvatar<Mascot: View>: View {
+    var variant: SplurjVariant = .her
+    var level: Int
+    var xpProgress: Double = 0.68
+    var stateDotColor: Color = Theme.glow
+    @ViewBuilder var mascot: () -> Mascot
+
+    var body: some View {
         ZStack(alignment: .topTrailing) {
             ZStack {
                 // Track

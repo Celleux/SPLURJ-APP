@@ -17,7 +17,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "house", value: .home) {
-                SplurjHomeHost()
+                SplurjMoneyHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             Tab("Coach", systemImage: "brain.head.profile.fill", value: .coach) {
@@ -32,8 +32,8 @@ struct ContentView: View {
                 SplurjPactsHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
-            Tab("You", systemImage: "leaf.fill", value: .hub) {
-                SplurjProfileHost()
+            Tab("Hub", systemImage: "leaf.fill", value: .hub) {
+                SplurjHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
