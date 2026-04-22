@@ -10,6 +10,7 @@ class ChallengeCloudKitService {
     private let ParticipantRecordType = "ChallengeParticipant"
     private let CheckInRecordType = "ChallengeCheckIn"
     private let NudgeRecordType = "ChallengeNudge"
+    private let PactInviteRecordType = "PactInvite"
 
     // MARK: - Participant
 
@@ -121,5 +122,33 @@ class ChallengeCloudKitService {
         let record = try await database.record(for: recordID)
         record["reactions"] = reactions
         try await database.save(record)
+    }
+
+    // MARK: - Pact Invite
+
+    func savePactInvite(
+        inviteCode: String,
+        typeRaw: String,
+        startDate: Date,
+        creatorName: String,
+        creatorReferralCode: String
+    ) async throws {
+        let record = CKRecord(
+            recordType: PactInviteRecordType,
+            recordID: CKRecord.ID(recordName: inviteCode)
+        )
+        record["inviteCode"] = inviteCode
+        record["typeRaw"] = typeRaw
+        record["creatorName"] = creatorName
+        record["creatorReferralCode"] = creatorReferralCode
+        record["startDate"] = startDate
+        try await database.save(record)
+    }
+
+    func fetchPactInvite(code: String) async throws -> CKRecord? {
+        let predicate = NSPredicate(format: "inviteCode == %@", code)
+        let query = CKQuery(recordType: PactInviteRecordType, predicate: predicate)
+        let (results, _) = try await database.records(matching: query, resultsLimit: 1)
+        return results.first.flatMap { try? $0.1.get() }
     }
 }

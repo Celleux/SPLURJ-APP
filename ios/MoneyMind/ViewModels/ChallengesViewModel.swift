@@ -1,17 +1,81 @@
 import SwiftUI
 import SwiftData
 
+enum PactJoinState: Equatable {
+    case idle
+    case joining
+    case joined(String)
+    case error(String)
+}
+
 @Observable
 class ChallengesViewModel {
     var showCelebration = false
     var celebrationMessage = ""
     var hapticTrigger = 0
     var confettiParticles: [ChallengeConfetti] = []
+    var joinState: PactJoinState = .idle
 
-    func startChallenge(type: ChallengeType, context: ModelContext) {
+    func startChallenge(type: ChallengeType, context: ModelContext, creator: UserProfile? = nil) {
         let challenge = SavingsChallenge(type: type)
         context.insert(challenge)
         hapticTrigger += 1
+        if let creator {
+            let inviteCode = challenge.inviteCode
+            let typeRaw = challenge.typeRaw
+            let startDate = challenge.startDate
+            let creatorName = creator.name
+            let referralCode = creator.referralCode
+            Task.detached {
+                try? await ChallengeCloudKitService.shared.savePactInvite(
+                    inviteCode: inviteCode,
+                    typeRaw: typeRaw,
+                    startDate: startDate,
+                    creatorName: creatorName,
+                    creatorReferralCode: referralCode
+                )
+            }
+        }
+    }
+
+    @MainActor
+    func joinChallenge(code rawCode: String, context: ModelContext) async {
+        let trimmed = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard trimmed.count >= 6 else {
+            joinState = .error("Enter the full pact code")
+            return
+        }
+        joinState = .joining
+
+        let existing = (try? context.fetch(FetchDescriptor<SavingsChallenge>())) ?? []
+        if existing.contains(where: { $0.inviteCode.uppercased() == trimmed }) {
+            joinState = .error("You're already in this pact")
+            return
+        }
+
+        do {
+            guard let record = try await ChallengeCloudKitService.shared.fetchPactInvite(code: trimmed) else {
+                joinState = .error("Pact code not found")
+                return
+            }
+            guard let typeRaw = record["typeRaw"] as? String,
+                  let type = ChallengeType(rawValue: typeRaw) else {
+                joinState = .error("Pact data was incomplete")
+                return
+            }
+            let mirror = SavingsChallenge(type: type)
+            mirror.inviteCode = trimmed
+            context.insert(mirror)
+            hapticTrigger += 1
+            joinState = .joined(type.title)
+            triggerCelebration("Joined \(type.title)!")
+        } catch {
+            joinState = .error(error.localizedDescription)
+        }
+    }
+
+    func resetJoinState() {
+        joinState = .idle
     }
 
     func markEnvelope(_ number: Int, challenge: SavingsChallenge) {

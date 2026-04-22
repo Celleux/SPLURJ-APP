@@ -3,6 +3,7 @@ import SwiftData
 
 struct PactsView: View {
     @Query private var challenges: [SavingsChallenge]
+    @Query private var profiles: [UserProfile]
     @Query private var quizResults: [QuizResult]
     @Environment(\.modelContext) private var modelContext
     @Environment(PremiumManager.self) private var premiumManager
@@ -12,6 +13,8 @@ struct PactsView: View {
     @State private var appeared = false
     @State private var showPaywall: Bool = false
     @State private var joinCode: String = ""
+
+    private var profile: UserProfile? { profiles.first }
 
     private var personality: MoneyPersonality {
         quizResults.first?.personality ?? .builder
@@ -71,6 +74,11 @@ struct PactsView: View {
                     appeared = true
                 }
             }
+            .onChange(of: vm.joinState) { _, newValue in
+                if case .joined = newValue {
+                    joinCode = ""
+                }
+            }
         }
     }
 
@@ -89,27 +97,58 @@ struct PactsView: View {
                     .font(.system(.body, design: .monospaced))
                     .textCase(.uppercase)
                     .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
                     .padding(12)
                     .background(Theme.elevated, in: .rect(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .strokeBorder(Theme.border, lineWidth: 0.5)
                     )
+                    .onChange(of: joinCode) { _, _ in
+                        if case .error = vm.joinState { vm.resetJoinState() }
+                    }
 
                 Button {
-                    // Join logic placeholder
+                    Task { await vm.joinChallenge(code: joinCode, context: modelContext) }
                 } label: {
-                    Text("Join")
-                        .font(Typography.headingSmall)
-                        .foregroundStyle(Theme.buttonTextOnAccent)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Theme.accentGradient, in: .rect(cornerRadius: 10))
+                    Group {
+                        if vm.joinState == .joining {
+                            ProgressView()
+                                .tint(Theme.buttonTextOnAccent)
+                        } else {
+                            Text("Join")
+                                .font(Typography.headingSmall)
+                                .foregroundStyle(Theme.buttonTextOnAccent)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Theme.accentGradient, in: .rect(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
-                .disabled(joinCode.count < 6)
+                .disabled(joinCode.count < 6 || vm.joinState == .joining)
                 .opacity(joinCode.count < 6 ? 0.5 : 1)
             }
+
+            joinStateMessage
+        }
+    }
+
+    @ViewBuilder
+    private var joinStateMessage: some View {
+        switch vm.joinState {
+        case .idle, .joining:
+            EmptyView()
+        case .joined(let title):
+            Label("Joined \(title)", systemImage: "checkmark.seal.fill")
+                .font(Typography.labelSmall)
+                .foregroundStyle(Theme.success)
+                .padding(.top, 2)
+        case .error(let message):
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .font(Typography.labelSmall)
+                .foregroundStyle(Theme.warning)
+                .padding(.top, 2)
         }
     }
 
@@ -153,7 +192,7 @@ struct PactsView: View {
                         showPaywall = true
                     } else if !alreadyActive {
                         withAnimation(Theme.spring) {
-                            vm.startChallenge(type: type, context: modelContext)
+                            vm.startChallenge(type: type, context: modelContext, creator: profile)
                         }
                     }
                 }
