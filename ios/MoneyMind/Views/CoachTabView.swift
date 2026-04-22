@@ -52,6 +52,7 @@ struct CoachTabView: View {
             .fullScreenCover(isPresented: $showOneSecGuide) { toolWrapper { OneSecBreathingGuideView() } dismissAction: { showOneSecGuide = false } }
             .fullScreenCover(isPresented: $showExercises) { toolWrapper { ACTExercisesView() } dismissAction: { showExercises = false } }
             .fullScreenCover(isPresented: $showDNSBlocking) { toolWrapper { DNSBlockingWizardView() } dismissAction: { showDNSBlocking = false } }
+            .profileAvatarToolbar()
         }
     }
 

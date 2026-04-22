@@ -112,6 +112,7 @@ struct WalletView: View {
             .onAppear {
                 applyPhantomProgress()
             }
+            .profileAvatarToolbar()
         }
     }
 

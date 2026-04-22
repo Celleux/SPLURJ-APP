@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 nonisolated enum AppTab: Int, Sendable {
-    case home, wallet, pacts, coach, hub, profile
+    case home, coach, wallet, pacts, hub
 }
 
 struct ContentView: View {
@@ -20,6 +20,10 @@ struct ContentView: View {
                 HomeView()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
+            Tab("Coach", systemImage: "brain.head.profile.fill", value: .coach) {
+                CoachTabView()
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
             Tab("Wallet", systemImage: "wallet.bifold", value: .wallet) {
                 WalletView()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -28,16 +32,8 @@ struct ContentView: View {
                 PactsView()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
-            Tab("Coach", systemImage: "brain.head.profile.fill", value: .coach) {
-                CoachTabView()
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            }
             Tab("Hub", systemImage: "square.grid.2x2.fill", value: .hub) {
                 HubView()
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            }
-            Tab("Profile", systemImage: "person.circle", value: .profile) {
-                ProfileView()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }

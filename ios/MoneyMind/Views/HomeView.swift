@@ -187,6 +187,7 @@ struct HomeView: View {
                     }
                 }
             }
+            .profileAvatarToolbar()
         }
     }
 

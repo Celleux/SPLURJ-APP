@@ -79,6 +79,7 @@ struct PactsView: View {
                     joinCode = ""
                 }
             }
+            .profileAvatarToolbar()
         }
     }
 

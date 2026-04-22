@@ -150,6 +150,7 @@ struct HubView: View {
             .fullScreenCover(isPresented: $showBudgetAnalytics) { spendingToolWrapper { BudgetAnalyticsView() } dismissAction: { showBudgetAnalytics = false } }
             .fullScreenCover(isPresented: $showGhostBudget) { spendingToolWrapper { GhostBudgetView() } dismissAction: { showGhostBudget = false } }
             .fullScreenCover(isPresented: $showVibeCheck) { spendingToolWrapper { VibeCheckAnalyticsView() } dismissAction: { showVibeCheck = false } }
+            .profileAvatarToolbar()
         }
     }
 
