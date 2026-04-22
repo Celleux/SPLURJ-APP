@@ -10,10 +10,16 @@ import SwiftData
 struct SplurjMoneyHomeHost: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
+    @Query(
+        filter: #Predicate<DailyQuestSlot> { $0.cadence == "daily" },
+        sort: \DailyQuestSlot.offeredDate, order: .reverse
+    )
+    private var dailyQuestSlots: [DailyQuestSlot]
     @Environment(\.modelContext) private var modelContext
     @Environment(HealthKitService.self) private var healthKit
 
     @State private var showProfile = false
+    @State private var showQuestHub = false
 
     private var profile: UserProfile? { profiles.first }
     private var name: String {
@@ -78,6 +84,31 @@ struct SplurjMoneyHomeHost: View {
 
     private var currencySymbol: String { profile?.currencySymbol ?? "$" }
 
+    /// Today's active DailyQuestSlot — the one whose offeredDate is today.
+    private var todaysQuestSlot: DailyQuestSlot? {
+        let calendar = Calendar.current
+        return dailyQuestSlots.first {
+            calendar.isDateInToday($0.offeredDate) && $0.expiresAt > Date()
+        }
+    }
+
+    private var todaysQuestDefinition: QuestDefinition? {
+        guard let slot = todaysQuestSlot else { return nil }
+        return QuestDataManager.shared.quest(byID: slot.questID)
+    }
+
+    private var questTitle: String {
+        todaysQuestDefinition?.title ?? "Skip the 10pm scroll-shop"
+    }
+
+    private var questSubtitle: String {
+        todaysQuestDefinition?.subtitle ?? "Your top splurge window. Hold the line."
+    }
+
+    private var questXP: Int {
+        todaysQuestDefinition?.xpReward ?? 20
+    }
+
     var body: some View {
         SplurjMoneyHomeView(
             variant: variant,
@@ -93,11 +124,11 @@ struct SplurjMoneyHomeHost: View {
             currencySymbol: currencySymbol,
             hrvText: hrvText,
             hrvState: hrvState,
-            questTitle: "Skip the 10pm scroll-shop",
-            questSubtitle: "Your top splurge window. Hold the line.",
-            questXP: 20,
+            questTitle: questTitle,
+            questSubtitle: questSubtitle,
+            questXP: questXP,
             onOpenProfile: { showProfile = true },
-            onOpenQuest: { }
+            onOpenQuest: { showQuestHub = true }
         )
         .task {
             await healthKit.refresh()
@@ -108,6 +139,9 @@ struct SplurjMoneyHomeHost: View {
             SplurjProfileHost()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showQuestHub) {
+            NavigationStack { QuestHubView() }
         }
     }
 }

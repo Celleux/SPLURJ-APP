@@ -3,17 +3,27 @@ import SwiftData
 
 // MARK: - Splurj Profile host
 //
-// Renders SplurjProfileView with real UserProfile + ImpulseLog +
-// SavingsChallenge + HealthKit data. Journey timeline is derived from
-// recent impulse logs + challenge milestones; trigger stats are derived
-// from ImpulseLog.category frequencies.
+// Feeds real data into SplurjProfileView and wires Settings-sheet rows
+// (Notifications, Recovery check-in / PGSI, Vibe insights, Badges,
+// Money Wrapped, Apple Health, Paywall, Help, Sign out) to the existing
+// production views via NavigationStack-wrapped sheets.
 
 struct SplurjProfileHost: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
     @Query private var allChallenges: [SavingsChallenge]
+    @Query(filter: #Predicate<InAppNotification> { !$0.isDismissed && !$0.isRead })
+    private var unreadNotifications: [InAppNotification]
+    @Query(sort: \PGSIAssessment.date, order: .reverse) private var pgsiHistory: [PGSIAssessment]
     @Environment(HealthKitService.self) private var healthKit
     @Environment(\.dismiss) private var dismiss
+
+    @State private var activeSheet: ProfileSheet?
+
+    enum ProfileSheet: String, Identifiable {
+        case notifications, pgsi, vibe, badges, moneyWrapped, settings, health, paywall, help
+        var id: String { rawValue }
+    }
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -50,9 +60,7 @@ struct SplurjProfileHost: View {
         return min(1.0, into / 3.0)
     }
 
-    private var xpPoints: Int {
-        profile?.xpPoints ?? 0
-    }
+    private var xpPoints: Int { profile?.xpPoints ?? 0 }
 
     private var splurgeFreeDays: Int {
         let calendar = Calendar.current
@@ -67,6 +75,11 @@ struct SplurjProfileHost: View {
 
     private var pactsWon: Int {
         allChallenges.filter { !$0.isActive && $0.totalSaved > 0 }.count
+    }
+
+    private var pgsiDueThisMonth: Bool {
+        guard let last = pgsiHistory.first?.date else { return true }
+        return !Calendar.current.isDate(last, equalTo: Date(), toGranularity: .month)
     }
 
     private var journey: [SplurjProfileView.JourneyEvent] {
@@ -110,10 +123,6 @@ struct SplurjProfileHost: View {
         }
     }
 
-    private var subscriptionStatus: String {
-        "Free plan"
-    }
-
     private var notificationsOnCount: Int {
         guard let p = profile else { return 0 }
         var n = 0
@@ -125,9 +134,7 @@ struct SplurjProfileHost: View {
         return n
     }
 
-    private var appleHealthConnected: Bool {
-        healthKit.latestHRV != nil
-    }
+    private var appleHealthConnected: Bool { healthKit.latestHRV != nil }
 
     var body: some View {
         SplurjProfileView(
@@ -150,10 +157,40 @@ struct SplurjProfileHost: View {
             equippedCosmetics: profile?.equippedCosmetics ?? [],
             journey: journey,
             triggers: triggers,
-            subscriptionStatus: subscriptionStatus,
+            subscriptionStatus: "Free plan",
             notificationsOnCount: notificationsOnCount,
             appleHealthConnected: appleHealthConnected,
-            onDismiss: { dismiss() }
+            unreadNotificationCount: unreadNotifications.count,
+            pgsiDueThisMonth: pgsiDueThisMonth,
+            onDismiss: { dismiss() },
+            onOpenNotifications: { activeSheet = .notifications },
+            onOpenPGSI:          { activeSheet = .pgsi },
+            onOpenMoneyWrapped:  { activeSheet = .moneyWrapped },
+            onOpenVibeAnalytics: { activeSheet = .vibe },
+            onOpenBadgeGallery:  { activeSheet = .badges },
+            onOpenSettings:      { activeSheet = .settings },
+            onOpenHealthSettings:{ activeSheet = .health },
+            onOpenPaywall:       { activeSheet = .paywall },
+            onOpenHelp:          { activeSheet = .help },
+            onSignOut:           { /* TODO: hook to AccountService */ }
         )
+        .sheet(item: $activeSheet) { sheet in
+            destinationView(for: sheet)
+        }
+    }
+
+    @ViewBuilder
+    private func destinationView(for sheet: ProfileSheet) -> some View {
+        switch sheet {
+        case .notifications:  NavigationStack { NotificationCenterView() }
+        case .pgsi:           NavigationStack { PGSIAssessmentView() }
+        case .vibe:           NavigationStack { VibeCheckAnalyticsView() }
+        case .badges:         NavigationStack { BadgeGalleryView() }
+        case .moneyWrapped:   NavigationStack { MoneyWrappedView() }
+        case .settings:       NavigationStack { SettingsView() }
+        case .health:         NavigationStack { SettingsView() }
+        case .paywall:        PaywallView()
+        case .help:           NavigationStack { SettingsView() }
+        }
     }
 }

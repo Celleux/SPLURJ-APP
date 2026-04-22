@@ -29,7 +29,19 @@ struct SplurjProfileView: View {
     var subscriptionStatus: String = "Free plan"
     var notificationsOnCount: Int = 0
     var appleHealthConnected: Bool = false
+    var unreadNotificationCount: Int = 0
+    var pgsiDueThisMonth: Bool = false
     var onDismiss: (() -> Void)? = nil
+    var onOpenNotifications: () -> Void = {}
+    var onOpenPGSI: () -> Void = {}
+    var onOpenMoneyWrapped: () -> Void = {}
+    var onOpenVibeAnalytics: () -> Void = {}
+    var onOpenBadgeGallery: () -> Void = {}
+    var onOpenSettings: () -> Void = {}
+    var onOpenHealthSettings: () -> Void = {}
+    var onOpenPaywall: () -> Void = {}
+    var onOpenHelp: () -> Void = {}
+    var onSignOut: () -> Void = {}
 
     @State private var segment: ProfileSegment = .journey
     @State private var activeShare: ShareTemplate? = nil
@@ -432,33 +444,70 @@ struct SplurjProfileView: View {
 
     private var settingsBody: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SPLURJI")
+            Text("RECOVERY")
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .tracking(1.4)
                 .foregroundStyle(Theme.textMuted)
                 .padding(.top, 4)
-            settingsRow(icon: "sparkles",         label: "Appearance",          value: "Night terrarium")
-            settingsRow(icon: "bell.fill",        label: "Notifications",       value: "\(notificationsOnCount) on")
-            settingsRow(icon: "lock.shield.fill", label: "Privacy & permissions", value: nil)
-            settingsRow(icon: "heart.fill",       label: "Apple Health",        value: appleHealthConnected ? "Connected" : "Not connected")
+            settingsRow(
+                icon: "bell.fill",
+                label: "Notifications",
+                value: unreadNotificationCount > 0 ? "\(unreadNotificationCount) new" : nil,
+                onTap: onOpenNotifications
+            )
+            settingsRow(
+                icon: "heart.text.square.fill",
+                label: "Recovery check-in",
+                value: pgsiDueThisMonth ? "Due" : "Monthly",
+                highlight: pgsiDueThisMonth,
+                onTap: onOpenPGSI
+            )
+            settingsRow(
+                icon: "face.smiling.inverse",
+                label: "Vibe insights",
+                value: nil,
+                onTap: onOpenVibeAnalytics
+            )
+            settingsRow(
+                icon: "rosette",
+                label: "Badges",
+                value: earnedBadges.isEmpty ? nil : "\(earnedBadges.count) earned",
+                onTap: onOpenBadgeGallery
+            )
+
+            Text("SPLURJI")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(Theme.textMuted)
+                .padding(.top, 14)
+            settingsRow(icon: "sparkles",         label: "Appearance",          value: "Night terrarium", onTap: onOpenSettings)
+            settingsRow(icon: "heart.fill",       label: "Apple Health",        value: appleHealthConnected ? "Connected" : "Not connected", onTap: onOpenHealthSettings)
+            settingsRow(icon: "gift.fill",        label: "Money Wrapped",       value: nil, onTap: onOpenMoneyWrapped)
 
             Text("ACCOUNT")
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .tracking(1.4)
                 .foregroundStyle(Theme.textMuted)
                 .padding(.top, 14)
-            settingsRow(icon: "star.fill",        label: "Splurji+ subscription", value: subscriptionStatus)
-            settingsRow(icon: "bubble.left.fill", label: "Help & feedback",       value: nil)
-            settingsRow(icon: "arrow.right.square.fill", label: "Sign out",       value: nil, danger: true)
+            settingsRow(icon: "star.fill",        label: "Splurji+ subscription", value: subscriptionStatus, onTap: onOpenPaywall)
+            settingsRow(icon: "bubble.left.fill", label: "Help & feedback",       value: nil, onTap: onOpenHelp)
+            settingsRow(icon: "arrow.right.square.fill", label: "Sign out",       value: nil, danger: true, onTap: onSignOut)
         }
     }
 
-    private func settingsRow(icon: String, label: String, value: String?, danger: Bool = false) -> some View {
-        Button { } label: {
+    private func settingsRow(
+        icon: String,
+        label: String,
+        value: String?,
+        highlight: Bool = false,
+        danger: Bool = false,
+        onTap: @escaping () -> Void = {}
+    ) -> some View {
+        Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(danger ? Theme.danger : Theme.textSecondary)
+                    .foregroundStyle(danger ? Theme.danger : (highlight ? Theme.honey : Theme.textSecondary))
                     .frame(width: 30, height: 30)
                     .background(Theme.cardTintHi, in: RoundedRectangle(cornerRadius: 9))
                 Text(label)
@@ -467,8 +516,8 @@ struct SplurjProfileView: View {
                 Spacer()
                 if let value {
                     Text(value)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Theme.textSecondary)
+                        .font(.system(size: 11.5, weight: highlight ? .heavy : .regular))
+                        .foregroundStyle(highlight ? Theme.honey : Theme.textSecondary)
                 }
                 if !danger {
                     Image(systemName: "chevron.right")
@@ -478,7 +527,7 @@ struct SplurjProfileView: View {
             }
             .padding(13)
             .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.border, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(highlight ? Theme.honey.opacity(0.4) : Theme.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
