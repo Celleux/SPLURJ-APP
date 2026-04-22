@@ -34,6 +34,9 @@ struct SettingsView: View {
                 accountSection
                 aboutSection
                 dataManagementSection
+                #if DEBUG
+                splurjDebugSection
+                #endif
             }
             .padding(.horizontal)
             .padding(.bottom, 40)
@@ -274,6 +277,40 @@ struct SettingsView: View {
             }
         }
     }
+
+    #if DEBUG
+    @State private var showSplurjPreviews = false
+
+    // MARK: - Splurj v2 previews (DEBUG only)
+
+    private var splurjDebugSection: some View {
+        SettingsSectionCard(title: "Splurj v2 · previews", icon: "sparkles", iconColor: Theme.glow) {
+            Button {
+                showSplurjPreviews = true
+            } label: {
+                HStack(spacing: 14) {
+                    SettingsIconBadge(icon: "paintpalette.fill", color: Theme.glow)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Open preview hub")
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Night Terrarium · mascot · onboarding · tabs")
+                            .font(Typography.labelSmall)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(Typography.labelSmall)
+                        .foregroundStyle(Theme.textSecondary.opacity(0.4))
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showSplurjPreviews) {
+            SplurjPreviewEntry()
+        }
+    }
+    #endif
 
     // MARK: - Health & Wellness
 
