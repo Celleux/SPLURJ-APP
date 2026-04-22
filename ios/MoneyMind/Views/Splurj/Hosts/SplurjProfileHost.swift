@@ -179,6 +179,37 @@ struct SplurjProfileHost: View {
         }
     }
 
+    private var wrappedData: WrappedData {
+        let xp = profile?.xpPoints ?? 0
+        let stage = CharacterStage.from(xp: xp)
+        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"
+        let mp: MoneyPersonality
+        switch personality {
+        case .builder:    mp = .builder
+        case .empath:     mp = .generous
+        case .hustler:    mp = .hustler
+        case .minimalist: mp = .minimalist
+        case .generous:   mp = .generous
+        }
+        return WrappedData(
+            periodLabel: f.string(from: Date()),
+            isAnnual: false,
+            totalSpent: 0,
+            lastPeriodSpent: 0,
+            totalSaved: profile?.totalSaved ?? 0,
+            savingsGoal: 1000,
+            purchasesResisted: impulseLogs.filter(\.resisted).count,
+            longestStreak: profile?.longestStreak ?? 0,
+            currentStreak: profile?.currentStreak ?? 0,
+            characterStage: stage,
+            startStage: .seedling,
+            level: CharacterStage.level(from: xp),
+            personality: mp,
+            categoryBreakdown: [],
+            moodBreakdown: []
+        )
+    }
+
     @ViewBuilder
     private func destinationView(for sheet: ProfileSheet) -> some View {
         switch sheet {
@@ -186,7 +217,7 @@ struct SplurjProfileHost: View {
         case .pgsi:           NavigationStack { PGSIAssessmentView() }
         case .vibe:           NavigationStack { VibeCheckAnalyticsView() }
         case .badges:         NavigationStack { BadgeGalleryView() }
-        case .moneyWrapped:   NavigationStack { MoneyWrappedView() }
+        case .moneyWrapped:   NavigationStack { MoneyWrappedView(data: wrappedData) }
         case .settings:       NavigationStack { SettingsView() }
         case .health:         NavigationStack { SettingsView() }
         case .paywall:        PaywallView()

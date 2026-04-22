@@ -361,7 +361,7 @@ private struct ShareCardFrame<Content: View>: View {
                     startRadius: 0, endRadius: 800
                 )
                 Canvas { ctx, rectSize in
-                    for i in 0..<25 {
+                    for _ in 0..<25 {
                         let x = CGFloat.random(in: 0...rectSize.width)
                         let y = CGFloat.random(in: 0...rectSize.height)
                         var p = Path()

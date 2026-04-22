@@ -163,7 +163,7 @@ struct SplurjWalletHost: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showLogWin) { WalletLogWinSheet() }
+        .sheet(isPresented: $showLogWin) { WalletLogWinSheet(onSaved: { _ in }) }
         .sheet(isPresented: $showAutopsy) { SpendingAutopsySheet() }
         .sheet(item: $activeTool) { tool in
             toolDestinationView(tool)

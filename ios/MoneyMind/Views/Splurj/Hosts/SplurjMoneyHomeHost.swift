@@ -106,7 +106,7 @@ struct SplurjMoneyHomeHost: View {
     }
 
     private var questXP: Int {
-        todaysQuestDefinition?.xpReward ?? 20
+        todaysQuestDefinition?.baseXP ?? 20
     }
 
     var body: some View {

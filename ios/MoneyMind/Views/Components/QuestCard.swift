@@ -163,9 +163,7 @@ struct QuestCard: View {
     private var difficultyStrip: some View {
         Group {
             if quest.difficulty == .legendary && !reduceMotion {
-                TimelineView(.animation(minimumInterval: 1.0 / 10.0)) { timeline in
-                    let elapsed = timeline.date.timeIntervalSinceReferenceDate
-                    let hue = (elapsed * 0.3).truncatingRemainder(dividingBy: 1.0)
+                TimelineView(.animation(minimumInterval: 1.0 / 10.0)) { _ in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(
                             LinearGradient(

@@ -97,7 +97,7 @@ struct SplurjPactsHost: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showLegacyPactsHub) {
-            NavigationStack { ChallengesHubView() }
+            NavigationStack { PactsView() }
         }
     }
 
