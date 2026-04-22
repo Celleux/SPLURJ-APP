@@ -137,13 +137,13 @@ nonisolated enum SplurjTab: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var systemImage: String {
+    var navIcon: SplurjNavIcon {
         switch self {
-        case .home:   "house"
-        case .coach:  "sun.max"
-        case .wallet: "creditcard"
-        case .pacts:  "checkmark.circle"
-        case .hub:    "sparkles"
+        case .home:   .home
+        case .coach:  .coach
+        case .wallet: .wallet
+        case .pacts:  .pacts
+        case .hub:    .hub
         }
     }
 }
@@ -196,11 +196,13 @@ struct SplurjBottomNav: View {
                     .shadow(color: isActive ? Theme.glow : .clear, radius: 6)
                     .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isActive)
 
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isActive ? Theme.textPrimary : Theme.textMuted)
-                    .shadow(color: isActive ? Theme.glow.opacity(0.67) : .clear, radius: 6)
-                    .frame(height: 22)
+                SplurjNavIconView(
+                    icon: tab.navIcon,
+                    size: 22,
+                    color: isActive ? Theme.textPrimary : Theme.textMuted
+                )
+                .shadow(color: isActive ? Theme.glow.opacity(0.67) : .clear, radius: 6)
+                .frame(height: 22)
 
                 Text(tab.label)
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
