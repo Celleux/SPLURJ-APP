@@ -13,7 +13,7 @@ struct SplurjApp: App {
                 if hasCompletedOnboarding {
                     ContentView()
                 } else {
-                    OnboardingView {
+                    SplurjOnboardingHost {
                         withAnimation(.spring(response: 0.5)) {
                             hasCompletedOnboarding = true
                         }
@@ -67,5 +67,37 @@ struct SplurjApp: App {
             ChallengeNudge.self,
             ChallengeActivityEvent.self,
         ])
+    }
+}
+
+// MARK: - Onboarding host
+//
+// Bridges SplurjOnboardingFlow (UI-only) with SwiftData persistence.
+// On completion, either creates a new UserProfile or updates the existing
+// one with the chosen variant + archetype, then flips the onboarding flag.
+
+private struct SplurjOnboardingHost: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
+    var onComplete: () -> Void
+
+    var body: some View {
+        SplurjOnboardingFlow { variant, archetype in
+            persist(variant: variant, archetype: archetype)
+            onComplete()
+        }
+    }
+
+    private func persist(variant: SplurjVariant, archetype: SplurjArchetype) {
+        let profile: UserProfile
+        if let existing = profiles.first {
+            profile = existing
+        } else {
+            profile = UserProfile(name: "you")
+            modelContext.insert(profile)
+        }
+        profile.splurjVariant = variant
+        profile.splurjArchetype = archetype
+        try? modelContext.save()
     }
 }

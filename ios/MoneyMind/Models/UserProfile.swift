@@ -66,6 +66,13 @@ class UserProfile {
     var currencySymbol: String
     var installDate: Date
 
+    // Splurj v2 personalization (set during SplurjOnboardingFlow)
+    var splurjVariantRaw: String?
+    var splurjArchetypeRaw: String?
+    var splurjLevel: Int
+    var equippedCosmeticIDs: [String]
+    var earnedBadgeIDs: [String]
+
     var userPath: UserPath {
         get { UserPath(rawValue: userPathRaw) ?? .generalSaver }
         set { userPathRaw = newValue.rawValue }
@@ -142,6 +149,11 @@ class UserProfile {
         self.userPathRaw = userPath.rawValue
         self.currencySymbol = currencySymbol
         self.installDate = Date()
+        self.splurjVariantRaw = nil
+        self.splurjArchetypeRaw = nil
+        self.splurjLevel = 1
+        self.equippedCosmeticIDs = []
+        self.earnedBadgeIDs = []
     }
 
     private static func generateReferralCode() -> String {
