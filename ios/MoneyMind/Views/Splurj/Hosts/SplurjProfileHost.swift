@@ -145,9 +145,10 @@ struct SplurjProfileHost: View {
             xpProgress: xpProgress,
             xpPoints: xpPoints,
             trackLabel: archetype.pitch.name,
-            name: profile?.name.trimmingCharacters(in: .whitespaces).isEmpty == false
-                ? profile!.name
-                : "you",
+            name: {
+                let n = profile?.name.trimmingCharacters(in: .whitespaces) ?? ""
+                return n.isEmpty ? "you" : n
+            }(),
             streak: profile?.currentStreak ?? 0,
             longestStreak: profile?.longestStreak ?? 0,
             totalSaved: Int((profile?.totalSaved ?? 0).rounded()),

@@ -85,6 +85,13 @@ struct SplurjMoneyHomeHost: View {
         return .steady
     }
 
+    private var hrvSeries: [Double] {
+        let points = healthKit.recentHRV.suffix(9).map(\.value)
+        guard points.count >= 2, let minV = points.min(), let maxV = points.max() else { return [] }
+        let range = max(1.0, maxV - minV)
+        return points.map { ($0 - minV) / range }
+    }
+
     private var currencySymbol: String { profile?.currencySymbol ?? "$" }
 
     /// Today's active DailyQuestSlot — the one whose offeredDate is today.
@@ -127,6 +134,7 @@ struct SplurjMoneyHomeHost: View {
             currencySymbol: currencySymbol,
             hrvText: hrvText,
             hrvState: hrvState,
+            hrvSeries: hrvSeries,
             questTitle: questTitle,
             questSubtitle: questSubtitle,
             questXP: questXP,

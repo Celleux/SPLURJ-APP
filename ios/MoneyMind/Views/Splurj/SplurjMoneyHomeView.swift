@@ -25,6 +25,7 @@ struct SplurjMoneyHomeView: View {
 
     var hrvText: String = "--"
     var hrvState: HRVState = .steady
+    var hrvSeries: [Double] = []
 
     var questTitle: String = ""
     var questSubtitle: String = ""
@@ -219,20 +220,21 @@ struct SplurjMoneyHomeView: View {
                     .foregroundStyle(Theme.textPrimary)
                 HStack(alignment: .bottom) {
                     ZStack(alignment: .bottom) {
-                        MiniSparklineFill(values: [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68])
+                        MiniSparklineFill(values: sparklineValues)
                             .fill(
                                 LinearGradient(
                                     colors: [hrvState.chipColor.opacity(0.35), hrvState.chipColor.opacity(0.0)],
                                     startPoint: .top, endPoint: .bottom
                                 )
                             )
-                        MiniSparkline(values: [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68])
+                        MiniSparkline(values: sparklineValues)
                             .stroke(
                                 hrvState.chipColor,
                                 style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
                             )
                     }
                     .frame(height: 34)
+                    .accessibilityHidden(true)
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(hrvText)
@@ -327,6 +329,10 @@ struct SplurjMoneyHomeView: View {
         case 17..<22: return "Evening"
         default:      return "Late night"
         }
+    }
+
+    private var sparklineValues: [Double] {
+        hrvSeries.count >= 2 ? hrvSeries : [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68]
     }
 
     private var mascotStateLine: String {

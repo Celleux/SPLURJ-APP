@@ -128,7 +128,8 @@ struct SplurjPactsHost: View {
     }
 
     private var currentUserID: String {
-        profile?.referralCode.isEmpty == false ? profile!.referralCode : "me"
+        let code = profile?.referralCode ?? ""
+        return code.isEmpty ? "me" : code
     }
 
     private func mappedJoinStatus(_ state: PactJoinState) -> SplurjPactsView.JoinCodeStatus {
