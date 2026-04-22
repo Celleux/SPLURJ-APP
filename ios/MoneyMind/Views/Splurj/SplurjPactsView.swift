@@ -28,8 +28,18 @@ struct SplurjPactsView: View {
     var onAcceptInvite: (String) -> Void = { _ in }
     var onDeclineInvite: (String) -> Void = { _ in }
     var onOpenPact: (String) -> Void = { _ in }
+    var onJoinWithCode: (String) -> Void = { _ in }
+    var joinCodeStatus: JoinCodeStatus = .idle
+
+    enum JoinCodeStatus: Equatable {
+        case idle
+        case joining
+        case joined(String)
+        case error(String)
+    }
 
     @State private var segment: PactSegment = .active
+    @State private var joinCode: String = ""
 
     nonisolated enum PactSegment: String, CaseIterable, Identifiable, Sendable {
         case active, invites, history
@@ -303,27 +313,115 @@ struct SplurjPactsView: View {
     // MARK: - Invites
 
     private var invitesSection: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
+            joinWithCodeCard
+
             if invites.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "envelope")
                         .font(.system(size: 24))
                         .foregroundStyle(Theme.textMuted)
-                    Text("No invites right now.")
+                    Text("No open invites right now.")
                         .font(.system(size: 12.5, weight: .heavy))
                         .foregroundStyle(Theme.textSecondary)
-                    Text("Share your referral code in Settings to invite a friend.")
+                    Text("Ask a friend for their 6-digit pact code above, or share yours from Settings.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.textMuted)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 30)
+                .padding(.vertical, 22)
             } else {
                 ForEach(invites) { inv in
                     inviteCard(inv)
                 }
             }
+        }
+    }
+
+    private var joinWithCodeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "number.square.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.honey)
+                Kicker("Join with a code", color: Theme.honey, tracking: 2.0)
+            }
+            HStack(spacing: 8) {
+                TextField("6-digit pact code", text: $joinCode)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                    .tracking(3.0)
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(.horizontal, 12)
+                    .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Theme.border, lineWidth: 1)
+                    )
+
+                Button {
+                    onJoinWithCode(joinCode.trimmingCharacters(in: .whitespaces).uppercased())
+                } label: {
+                    Group {
+                        if case .joining = joinCodeStatus {
+                            ProgressView().tint(Color(hex: 0x0B1614))
+                        } else {
+                            Text("Join")
+                                .font(.system(size: 13, weight: .heavy))
+                        }
+                    }
+                    .foregroundStyle(Color(hex: 0x0B1614))
+                    .frame(minWidth: 64, minHeight: 44)
+                    .background(isJoinDisabled ? Theme.honey.opacity(0.45) : Theme.honey, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isJoinDisabled)
+            }
+
+            joinCodeStatusLine
+        }
+        .padding(14)
+        .background(
+            LinearGradient(
+                colors: [Theme.honey.opacity(0.08), Theme.cardTint],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.honey.opacity(0.28), lineWidth: 1))
+    }
+
+    private var isJoinDisabled: Bool {
+        let trimmed = joinCode.trimmingCharacters(in: .whitespaces)
+        if case .joining = joinCodeStatus { return true }
+        return trimmed.count < 6
+    }
+
+    @ViewBuilder
+    private var joinCodeStatusLine: some View {
+        switch joinCodeStatus {
+        case .idle, .joining:
+            EmptyView()
+        case .joined(let code):
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Theme.glow)
+                Text("Joined \(code).")
+                    .foregroundStyle(Theme.glow)
+            }
+            .font(.system(size: 11, weight: .heavy))
+        case .error(let message):
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Theme.danger)
+                Text(message)
+                    .foregroundStyle(Theme.danger)
+            }
+            .font(.system(size: 11, weight: .heavy))
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

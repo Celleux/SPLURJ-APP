@@ -17,6 +17,8 @@ struct SplurjPactsHost: View {
     @State private var showProfile = false
     @State private var showLegacyPactsHub = false
     @State private var openChallengeID: String?
+    @State private var challengesVM = ChallengesViewModel()
+    @Environment(\.modelContext) private var modelContext
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -91,7 +93,11 @@ struct SplurjPactsHost: View {
             historyEarned: earnedTotal,
             onNewPact: { showLegacyPactsHub = true },
             onOpenProfile: { showProfile = true },
-            onOpenPact: { id in openChallengeID = id }
+            onOpenPact: { id in openChallengeID = id },
+            onJoinWithCode: { code in
+                Task { await challengesVM.joinChallenge(code: code, context: modelContext) }
+            },
+            joinCodeStatus: mappedJoinStatus(challengesVM.joinState)
         )
         .sheet(isPresented: $showProfile) {
             SplurjProfileHost()
@@ -123,6 +129,15 @@ struct SplurjPactsHost: View {
 
     private var currentUserID: String {
         profile?.referralCode.isEmpty == false ? profile!.referralCode : "me"
+    }
+
+    private func mappedJoinStatus(_ state: PactJoinState) -> SplurjPactsView.JoinCodeStatus {
+        switch state {
+        case .idle:              return .idle
+        case .joining:           return .joining
+        case .joined(let code):  return .joined(code)
+        case .error(let msg):    return .error(msg)
+        }
     }
 
     private func dailySave(for challenge: SavingsChallenge) -> Double {
