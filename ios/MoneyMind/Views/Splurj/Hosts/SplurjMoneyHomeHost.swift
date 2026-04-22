@@ -10,6 +10,8 @@ import SwiftData
 struct SplurjMoneyHomeHost: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
+    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
+    @Query(sort: \BudgetCategory.sortOrder) private var budgets: [BudgetCategory]
     @Query(
         filter: #Predicate<DailyQuestSlot> { $0.cadence == "daily" },
         sort: \DailyQuestSlot.offeredDate, order: .reverse
@@ -17,6 +19,7 @@ struct SplurjMoneyHomeHost: View {
     private var dailyQuestSlots: [DailyQuestSlot]
     @Environment(\.modelContext) private var modelContext
     @Environment(HealthKitService.self) private var healthKit
+    @Environment(PremiumManager.self) private var premiumManager
 
     @State private var showProfile = false
     @State private var showQuestHub = false
@@ -131,9 +134,33 @@ struct SplurjMoneyHomeHost: View {
             onOpenQuest: { showQuestHub = true }
         )
         .task {
-            await healthKit.refresh()
-            profile?.lastOpenDate = Date()
+            // --- Session open side effects (restored from legacy HomeView.onAppear) ---
+            if let profile {
+                premiumManager.updateInstallDate(profile.installDate)
+                profile.lastOpenDate = Date()
+                NotificationService.shared.scheduleAllNotifications(profile: profile)
+                NotificationService.shared.checkBudgetThresholds(
+                    budgets: Array(budgets),
+                    transactions: Array(transactions),
+                    profile: profile,
+                    modelContext: modelContext
+                )
+                if profile.currentStreak > 0 {
+                    NotificationService.shared.celebrateStreak(
+                        days: profile.currentStreak,
+                        profile: profile,
+                        modelContext: modelContext
+                    )
+                }
+            }
+            ensureDefaultBudgets()
+            applyPhantomProgressIfNeeded()
             try? modelContext.save()
+
+            await healthKit.refresh()
+            if let profile {
+                healthKit.evaluateJITAI(profile: profile, modelContext: modelContext)
+            }
         }
         .sheet(isPresented: $showProfile) {
             SplurjProfileHost()
@@ -143,5 +170,34 @@ struct SplurjMoneyHomeHost: View {
         .sheet(isPresented: $showQuestHub) {
             NavigationStack { QuestHubView() }
         }
+    }
+
+    /// First-run: seed default budget categories so Wallet · Budgets shows
+    /// sensible rows before the user has set anything up.
+    private func ensureDefaultBudgets() {
+        guard budgets.isEmpty else { return }
+        for (i, def) in BudgetCategory.defaults.enumerated() {
+            let budget = BudgetCategory(
+                name: def.0,
+                icon: def.1,
+                colorHex: def.2,
+                monthlyLimit: def.3,
+                sortOrder: i
+            )
+            modelContext.insert(budget)
+        }
+    }
+
+    /// Phantom progress (legacy WalletView behavior): seed profile.totalSaved
+    /// with $2 on first run so Profile stats + share cards show a non-zero
+    /// starting value. Psychological hook from the BillionDollar Design
+    /// Blueprint — makes Day 1 feel like "something already happened."
+    private func applyPhantomProgressIfNeeded() {
+        guard let profile,
+              !profile.phantomProgressApplied,
+              profile.totalSaved == 0
+        else { return }
+        profile.totalSaved = 2.0
+        profile.phantomProgressApplied = true
     }
 }
