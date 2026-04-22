@@ -4,24 +4,43 @@ typealias Typography = Theme.Typography
 
 enum Theme {
 
-    // MARK: - Backgrounds (warm charcoal, NOT pure black — prevents halation on OLED)
+    // MARK: - Night Terrarium (Splurj mascot-first palette)
+    //
+    // Green-dominant deep moss backgrounds, amber honey for CTAs, green glow for
+    // primary actions (active tab, progress, "on track"), petal/sky for gendered
+    // variant accents. Matches the prototype in explorations/v2-shell.jsx.
 
-    static let background = Color(hex: 0x141416)
+    static let background = Color(hex: 0x0B1614)    // deep moss — app background
+    static let bgDeep = Color(hex: 0x050C0B)        // status bar / below-content
     static let surface = Color(hex: 0x1E1E22)
     static let elevated = Color(hex: 0x262630)
     static let modal = Color(hex: 0x303040)
 
-    // MARK: - Primary Accent (GOLD — prosperity, achievement, money)
+    // MARK: - Primary green (glow) — active tabs, progress, "on track"
 
-    static let accent = Color(hex: 0xD4A843)
-    static let accentDim = Color(hex: 0xB8922F)
-    static let accentGlow = Color(hex: 0xD4A843, opacity: 0.15)
-    static let accentBright = Color(hex: 0xE8C872)
+    static let glow = Color(hex: 0x7EC552)
+    static let glowDeep = Color(hex: 0x4A8F3A)
+    static let glowSoft = Color(hex: 0x7EC552, opacity: 0.18)
+
+    // MARK: - CTA gold (honey) — primary buttons, level badges, hero kickers
+    //
+    // Kept in both .accent (legacy alias) and .honey (new name) to avoid churn.
+
+    static let accent = Color(hex: 0xE8B94E)
+    static let accentDim = Color(hex: 0xB8871E)
+    static let accentGlow = Color(hex: 0xE8B94E, opacity: 0.15)
+    static let accentBright = Color(hex: 0xFFE899)
+    static let honey = accent
+
+    // MARK: - Variant accents (mascot gender tints)
+
+    static let petal = Color(hex: 0xFFBCD9)         // Her
+    static let sky = Color(hex: 0x8DB8E8)           // Him
 
     // MARK: - Button Contrast Colors
 
-    static let buttonTextOnAccent = Color(hex: 0x0F0F12)
-    static let iconOnAccent = Color(hex: 0x0F0F12)
+    static let buttonTextOnAccent = Color(hex: 0x1A1208)
+    static let iconOnAccent = Color(hex: 0x1A1208)
 
     // MARK: - Secondary Accent (TEAL — health, growth, breathing exercises)
 
@@ -32,23 +51,24 @@ enum Theme {
 
     static let accentTertiary = Color(hex: 0x6366F1)
 
-    // MARK: - Gold (badges, streaks, premium)
+    // MARK: - Gold (badges, streaks, premium) — alias of honey
 
-    static let gold = Color(hex: 0xE8B94E)
+    static let gold = accent
     static let goldDim = Color(hex: 0xE8B94E, opacity: 0.12)
 
     // MARK: - Semantic (desaturated, NOT gambling-associated)
 
-    static let success = Color(hex: 0x4ECDC4)
+    static let success = glow
     static let warning = Color(hex: 0xF0A030)
-    static let danger = Color(hex: 0xF08389)
+    static let danger = Color(hex: 0xE87C5A)        // Night Terrarium alert orange-red
+    static let calm = sky
 
-    // MARK: - Text (off-white, not pure white — reduces eye strain)
+    // MARK: - Text (off-white with green cast — matches v2 `fg`)
 
-    static let textPrimary = Color(hex: 0xE5E5E7)
-    static let textSecondary = Color(hex: 0x8E8E93)
-    static let textMuted = Color(hex: 0x555560)
-    static let textDisabled = Color(hex: 0x3A3A45)
+    static let textPrimary = Color(hex: 0xE6F3E0)   // Night Terrarium off-white
+    static let textSecondary = Color(hex: 0xE6F3E0, opacity: 0.55)
+    static let textMuted = Color(hex: 0xE6F3E0, opacity: 0.32)
+    static let textDisabled = Color(hex: 0xE6F3E0, opacity: 0.18)
 
     // MARK: - Elevation System
 
@@ -59,9 +79,15 @@ enum Theme {
 
     // MARK: - Borders & Dividers
 
-    static let border = Color(hex: 0x2A2A35)
+    static let border = Color(hex: 0xE6F3E0, opacity: 0.10)         // hairline on terrarium
+    static let borderHi = Color(hex: 0xE6F3E0, opacity: 0.18)       // emphasized hairline
     static let borderAccent = Color(hex: 0xE8B94E, opacity: 0.2)
-    static let divider = Color(hex: 0x2A2A35, opacity: 0.5)
+    static let divider = Color(hex: 0xE6F3E0, opacity: 0.06)
+
+    // MARK: - Card tints (alpha overlays over terrarium bg)
+
+    static let cardTint = Color.white.opacity(0.04)
+    static let cardTintHi = Color.white.opacity(0.07)
 
     // MARK: - Feature Colors (DNA axes, quest chains, emotional triggers)
 
@@ -114,19 +140,35 @@ enum Theme {
     // MARK: - Gradients
 
     static let accentGradient = LinearGradient(
-        colors: [Color(hex: 0xD4A843), Color(hex: 0xB8922F)],
+        colors: [Color(hex: 0xE8B94E), Color(hex: 0xB8871E)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
+    // MARK: - Primary CTA gradient (3-stop honey — per prototype `PrimaryButton`)
+
+    static let primaryCtaGradient = LinearGradient(
+        colors: [Color(hex: 0xFFE899), Color(hex: 0xE8B94E), Color(hex: 0xB8871E)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    // MARK: - SOS gradient (Night Terrarium danger)
+
+    static let sosGradient = LinearGradient(
+        colors: [Color(hex: 0x9EE26E), Color(hex: 0x4A8F3A)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
     static let premiumGradient = LinearGradient(
-        colors: [Color(hex: 0xD4A843), Color(hex: 0xB8922F)],
+        colors: [Color(hex: 0xE8B94E), Color(hex: 0xB8871E)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
     static let goldGradient = LinearGradient(
-        colors: [Color(hex: 0xD4A843), Color(hex: 0xB8922F)],
+        colors: [Color(hex: 0xE8B94E), Color(hex: 0xB8871E)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
