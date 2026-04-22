@@ -128,24 +128,21 @@ struct CopyTests {
         }
     }
 
-    @Test func quizHasFiveQuestionsAndMapsToFiveArchetypes() {
-        #expect(SplurjQuiz.questions.count == 5)
-        let mapped = Set(SplurjQuiz.questions.flatMap { $0.options.map(\.archetype) })
+    @Test func quizIsSingleQuestionCoveringAllFiveDNATypes() {
+        #expect(SplurjQuiz.questions.count == 1)
+        let question = SplurjQuiz.questions[0]
+        #expect(question.options.count == 5)
+        let mapped = Set(question.options.map(\.archetype))
         #expect(mapped == Set(SplurjArchetype.allCases),
-                "Quiz options should cover all 5 archetypes")
+                "The single splurge-DNA question must offer one option per archetype")
     }
 
-    @Test func quizScoringTalliesCorrectly() {
+    @Test func quizScoringPicksThePickedArchetype() {
         let options = SplurjQuiz.questions.flatMap(\.options)
-        // Pick 3 Builder + 2 Empath → Builder wins
-        let picks = [
-            options.first { $0.archetype == .builder }!,
-            options.first { $0.archetype == .builder }!,
-            options.first { $0.archetype == .builder }!,
-            options.first { $0.archetype == .empath }!,
-            options.first { $0.archetype == .empath }!,
-        ]
-        #expect(SplurjQuiz.score(picks) == .builder)
+        let fomo = options.first { $0.archetype == .empath }!
+        #expect(SplurjQuiz.score([fomo]) == .empath)
+        // Empty answers fall back to .builder (Stress Shield).
+        #expect(SplurjQuiz.score([]) == .builder)
     }
 
     @Test func pushCopyCategoriesPopulated() {

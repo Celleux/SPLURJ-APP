@@ -329,17 +329,16 @@ private struct QuizScreen: View {
 
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 14) {
-                        Tag("Question \(String(format: "%02d", question.id)) / 05",
-                            color: Theme.honey)
+                        Tag(question.kicker, color: Theme.honey)
                         Text(question.prompt)
-                            .font(.system(size: 28, weight: .heavy, design: .rounded))
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
                             .foregroundStyle(Theme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
                     SplurjMascot(
                         variant: variant,
-                        stage: stageForQuestion(question.id),
+                        stage: .sprout,
                         size: 96
                     )
                     .frame(width: 100, height: 100)
@@ -348,7 +347,7 @@ private struct QuizScreen: View {
                 .padding(.top, 36)
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         ForEach(question.options) { opt in
                             QuizOptionRow(option: opt) { onAnswer(opt) }
                         }
@@ -383,25 +382,38 @@ private struct QuizOptionRow: View {
             tapped = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { onSelect() }
         } label: {
-            HStack(spacing: 12) {
-                Text(option.label)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.textMuted)
+            HStack(spacing: 14) {
+                Image(systemName: option.systemImage)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(option.archetype.pitch.accent)
+                    .frame(width: 38, height: 38)
+                    .background(option.archetype.pitch.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 11))
+                    .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(option.archetype.pitch.accent.opacity(0.28), lineWidth: 1))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(option.label)
+                        .font(.system(size: 15, weight: .heavy))
+                        .foregroundStyle(Theme.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(option.sub)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: tapped ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(tapped ? Theme.glow : Theme.textMuted)
             }
             .padding(.vertical, 14).padding(.horizontal, 16)
-            .background(tapped ? Theme.glow.opacity(0.2) : Theme.cardTint,
-                        in: RoundedRectangle(cornerRadius: 16))
+            .background(tapped ? Theme.glow.opacity(0.14) : Theme.cardTint,
+                        in: RoundedRectangle(cornerRadius: 18))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(tapped ? Theme.glow : Theme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(tapped ? Theme.glow : Theme.border, lineWidth: tapped ? 2 : 1)
             )
-            .scaleEffect(tapped ? 0.97 : 1.0)
+            .scaleEffect(tapped ? 0.98 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: tapped)
         }
         .buttonStyle(.plain)
@@ -547,8 +559,8 @@ private struct PaywallScreen: View {
                 .padding(.top, 12)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Tag("Splurj+ · Start free", color: Theme.honey)
-                    Text("help me reach\nfull bloom.")
+                    Tag("Splurji+ \u{00B7} Start free", color: Theme.honey)
+                    Text("Help your Splurji\nreach full bloom.")
                         .font(.system(size: 30, weight: .heavy, design: .rounded))
                         .foregroundStyle(Theme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -557,8 +569,8 @@ private struct PaywallScreen: View {
                 .padding(.top, 12)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    feature("All 6 evolution stages", detail: "seed → bonsai")
-                    feature("AI Money Coach", detail: "SOS intercept, pause & breathe, HALT check")
+                    feature("All 6 evolution stages", detail: "seed \u{2192} bonsai")
+                    feature("AI Money Coach", detail: "1-tap Pause & Breathe, HALT check, SOS")
                     feature("Unlimited Pacts", detail: "pool money with friends, hold each other honest")
                     feature("Apple Health HRV", detail: "catch stress spirals before they spend")
                 }
@@ -566,8 +578,8 @@ private struct PaywallScreen: View {
                 .padding(.top, 22)
 
                 HStack(spacing: 10) {
-                    planCard(.month, title: "Monthly", price: "$9.99", sub: "/mo · cancel any time", badge: nil)
-                    planCard(.year, title: "Yearly", price: "$49.99", sub: "$4.16/mo · save 58%", badge: "BEST")
+                    planCard(.month, title: "Monthly", price: "$9.99", sub: "/mo \u{00B7} cancel any time", badge: nil)
+                    planCard(.year, title: "Yearly", price: "$59", sub: "$4.91/mo \u{00B7} save 50%", badge: "BEST")
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -577,7 +589,7 @@ private struct PaywallScreen: View {
                 VStack(spacing: 2) {
                     PrimaryCtaButton(title: "Start 7-day free trial") { onStart() }
                     HStack(spacing: 2) {
-                        Text("Then $4.16/mo · cancel anytime · ")
+                        Text("Then $4.91/mo \u{00B7} cancel anytime \u{00B7} ")
                             .foregroundStyle(Theme.textMuted)
                         Text("Restore")
                             .foregroundStyle(Theme.textSecondary)

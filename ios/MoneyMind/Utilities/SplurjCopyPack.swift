@@ -1,11 +1,17 @@
 import SwiftUI
 import Foundation
 
-// MARK: - Splurj archetype (from Copy Pack — 5 post-quiz archetypes)
+// MARK: - Splurj DNA archetype (from Copy Pack — 5 splurge-trigger types)
 //
-// Locked names per 2026-04 decision: Builder / Empath / Riser / Minimalist /
-// Generous. The "Hustler" slot was retired for tonal conflict; "Riser"
-// compounds with the mascot's growth metaphor.
+// Claude Design names each Splurji after the splurge pattern it's built to
+// shield against. Enum cases keep their legacy names (builder/empath/riser/
+// minimalist/generous) for SwiftData stability; the user-facing name comes
+// from pitch.name. The 5 DNA types:
+//   • builder    → "Stress Shield"     (stress & bad days)
+//   • empath     → "FOMO Filter"       (social spirals, late-night scroll)
+//   • riser      → "Reward Regulator"  (payday splurges, "treat yourself")
+//   • minimalist → "Boredom Buddy"     (dopamine dips, apps-open)
+//   • generous   → "Your Splurji"      (custom / other triggers)
 
 nonisolated enum SplurjArchetype: String, CaseIterable, Identifiable, Codable, Sendable, Hashable {
     case builder, empath, riser, minimalist, generous
@@ -13,60 +19,72 @@ nonisolated enum SplurjArchetype: String, CaseIterable, Identifiable, Codable, S
     var id: String { rawValue }
 
     struct Pitch: Sendable {
-        let name: String       // "The Builder"
-        let kicker: String     // "ARCHETYPE 01 · DISCIPLINE"
+        let name: String       // "Stress Shield"
+        let kicker: String     // "YOUR SPLURJI IS BORN"
         let description: String
-        let stats: [String]    // ["PLAN-DRIVEN", "MOMENTUM: +"]
+        let stats: [String]    // ["LV 01", "STAGE Seed", "DNA Stress"]
         let sigil: String      // single glyph used on reveal
         let accent: Color
+    }
+
+    /// The DNA chip label used on the reveal, in share cards, and in
+    /// Profile.Stats (e.g. "Stress", "FOMO", "Rewards", "Boredom", "Custom").
+    var dnaLabel: String {
+        switch self {
+        case .builder:    "Stress"
+        case .empath:     "FOMO"
+        case .riser:      "Rewards"
+        case .minimalist: "Boredom"
+        case .generous:   "Custom"
+        }
     }
 
     var pitch: Pitch {
         switch self {
         case .builder:
             return .init(
-                name: "The Builder",
-                kicker: "ARCHETYPE 01 \u{00B7} DISCIPLINE",
-                description: "You like the graph going up. Pacts, streaks, milestones — they work on you. Splurj turns every dollar into a level you can see.",
-                stats: ["PLAN-DRIVEN", "MOMENTUM: +"],
-                sigil: "\u{25C6}",    // ◆
+                name: "Stress Shield",
+                kicker: "YOUR SPLURJI IS BORN",
+                description: "She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling.",
+                stats: ["LV 01", "STAGE Seed", "DNA Stress"],
+                sigil: "\u{1F6E1}",   // 🛡
                 accent: Theme.glow
             )
         case .empath:
             return .init(
-                name: "The Empath",
-                kicker: "ARCHETYPE 02 \u{00B7} FEELING",
-                description: "Money is emotional for you. A hard day shows up on the card. That\u{2019}s not weakness — it\u{2019}s signal. Splurj catches the feeling before the cart.",
-                stats: ["FEELS EVERY DOLLAR", "KIND ALERTS"],
-                sigil: "\u{25C8}",    // ◈
-                accent: Color(hex: 0xFF8E7E)
+                name: "FOMO Filter",
+                kicker: "YOUR SPLURJI IS BORN",
+                description: "She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling.",
+                stats: ["LV 01", "STAGE Seed", "DNA FOMO"],
+                sigil: "\u{1F441}",   // 👁
+                accent: Theme.petal
             )
         case .riser:
             return .init(
-                name: "The Riser",
-                kicker: "ARCHETYPE 03 \u{00B7} GROWTH",
-                description: "You came from somewhere — and you\u{2019}re going somewhere better. Every save is proof. Splurj is here for the climb, not the finish line.",
-                stats: ["UPWARD MINDSET", "STAGE-DRIVEN"],
-                sigil: "\u{25B2}",    // ▲
+                name: "Reward Regulator",
+                kicker: "YOUR SPLURJI IS BORN",
+                description: "She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling.",
+                stats: ["LV 01", "STAGE Seed", "DNA Rewards"],
+                sigil: "\u{2728}",   // ✨
                 accent: Theme.honey
             )
         case .minimalist:
             return .init(
-                name: "The Minimalist",
-                kicker: "ARCHETYPE 04 \u{00B7} CLARITY",
-                description: "Less is the goal. Fewer subs. Fewer taps. More room to breathe. Splurj will help you cut what doesn\u{2019}t earn its keep.",
-                stats: ["LOW-FOOTPRINT", "SUBS: TRIMMED"],
-                sigil: "\u{25C7}",    // ◇
+                name: "Boredom Buddy",
+                kicker: "YOUR SPLURJI IS BORN",
+                description: "She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling.",
+                stats: ["LV 01", "STAGE Seed", "DNA Boredom"],
+                sigil: "\u{1F319}",   // 🌙
                 accent: Theme.sky
             )
         case .generous:
             return .init(
-                name: "The Generous",
-                kicker: "ARCHETYPE 05 \u{00B7} CARE",
-                description: "You save so someone else doesn\u{2019}t have to worry. Family, partner, the future you. Splurj holds the vision and guards the vault.",
-                stats: ["OTHERS-FIRST", "VAULT: SHARED"],
-                sigil: "\u{2661}",    // ♡
-                accent: Theme.petal
+                name: "Your Splurji",
+                kicker: "YOUR SPLURJI IS BORN",
+                description: "Unique triggers, unique mascot. She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling.",
+                stats: ["LV 01", "STAGE Seed", "DNA Custom"],
+                sigil: "\u{1F33F}",   // 🌿
+                accent: Theme.textPrimary
             )
         }
     }
@@ -199,68 +217,79 @@ extension EmptyStateKind {
     }
 }
 
-// MARK: - DNA quiz (5 questions, weighted scoring)
+// MARK: - DNA quiz (single-question splurge-trigger picker)
 //
-// Port of Copy Pack §02. Each option carries the archetype it votes for;
-// QuizResult tallies the votes and returns the highest-scoring archetype
-// (ties broken by order → Builder wins over Empath etc., per spec).
+// Claude Design's onboarding uses ONE question, not five: "When do you
+// splurge most?" with 5 DNA options. Each option maps directly to an
+// archetype. The QuizQuestion model keeps the array shape so the
+// onboarding flow's existing iteration code stays unchanged — it just
+// iterates over a single-element list now.
 
 nonisolated struct QuizOption: Sendable, Identifiable {
     let id: String
     let label: String
+    let sub: String                 // secondary line, e.g. "HALT triggers · emotional spending"
+    let systemImage: String         // SF Symbol shown on the leading icon
     let archetype: SplurjArchetype
 }
 
 nonisolated struct QuizQuestion: Sendable, Identifiable {
-    let id: Int                 // 1–5
+    let id: Int
     let prompt: String
+    let kicker: String              // e.g. "02 · SPLURGE DNA"
     let options: [QuizOption]
 }
 
 nonisolated enum SplurjQuiz {
     static let questions: [QuizQuestion] = [
-        .init(id: 1, prompt: "When money stress hits, you\u{2026}", options: [
-            .init(id: "q1a", label: "Buy something small to feel in control",  archetype: .empath),
-            .init(id: "q1b", label: "Open every app, make a plan",              archetype: .builder),
-            .init(id: "q1c", label: "Step back. Cut one thing.",                 archetype: .minimalist),
-            .init(id: "q1d", label: "Talk it out with someone who gets it",     archetype: .generous),
-        ]),
-        .init(id: 2, prompt: "Your last impulse buy was because\u{2026}", options: [
-            .init(id: "q2a", label: "It would move me toward a goal",                                      archetype: .builder),
-            .init(id: "q2b", label: "I\u{2019}d had a hard day. I deserved it.",                           archetype: .empath),
-            .init(id: "q2c", label: "I\u{2019}m tired of the thing I had",                                  archetype: .riser),
-            .init(id: "q2d", label: "Honestly? I don\u{2019}t own much — this fills a real gap",           archetype: .minimalist),
-        ]),
-        .init(id: 3, prompt: "Checking your bank account feels like\u{2026}", options: [
-            .init(id: "q3a", label: "A gut punch — I feel every dollar",                 archetype: .empath),
-            .init(id: "q3b", label: "A checkpoint — a step toward the next level",       archetype: .riser),
-            .init(id: "q3c", label: "A map — numbers moving toward a plan",              archetype: .builder),
-            .init(id: "q3d", label: "A mirror — am I living with just enough?",          archetype: .minimalist),
-        ]),
-        .init(id: 4, prompt: "You save best when\u{2026}", options: [
-            .init(id: "q4a", label: "There\u{2019}s a plan and a deadline",              archetype: .builder),
-            .init(id: "q4b", label: "I\u{2019}m saving for someone I love",              archetype: .generous),
-            .init(id: "q4c", label: "I own less, so there\u{2019}s more left over",      archetype: .minimalist),
-            .init(id: "q4d", label: "I\u{2019}m leveling up — the old me wouldn\u{2019}t have", archetype: .riser),
-        ]),
-        .init(id: 5, prompt: "A year from now, you want to be\u{2026}", options: [
-            .init(id: "q5a", label: "First $10K saved",               archetype: .builder),
-            .init(id: "q5b", label: "Calmer — kinder to myself",      archetype: .empath),
-            .init(id: "q5c", label: "Leveled up — a version I\u{2019}m proud of", archetype: .riser),
-            .init(id: "q5d", label: "Owning less. Needing less.",     archetype: .minimalist),
-            .init(id: "q5e", label: "Helping the people I love",      archetype: .generous),
-        ]),
+        .init(
+            id: 1,
+            prompt: "When do you splurge most?",
+            kicker: "02 \u{00B7} SPLURGE DNA",
+            options: [
+                .init(
+                    id: "stress",
+                    label: "Stress & bad days",
+                    sub: "HALT triggers \u{00B7} emotional spending",
+                    systemImage: "cloud.rain.fill",
+                    archetype: .builder
+                ),
+                .init(
+                    id: "fomo",
+                    label: "FOMO & social spirals",
+                    sub: "Friends buying \u{00B7} late-night scrolling",
+                    systemImage: "person.2.fill",
+                    archetype: .empath
+                ),
+                .init(
+                    id: "rewards",
+                    label: "I-earned-it rewards",
+                    sub: "Payday splurges \u{00B7} \u{201C}treat yourself\u{201D}",
+                    systemImage: "sparkles",
+                    archetype: .riser
+                ),
+                .init(
+                    id: "boredom",
+                    label: "Boredom & dopamine dips",
+                    sub: "Apps open \u{00B7} nothing to do",
+                    systemImage: "moon.zzz.fill",
+                    archetype: .minimalist
+                ),
+                .init(
+                    id: "custom",
+                    label: "Something else",
+                    sub: "Tell Splurji what you notice",
+                    systemImage: "leaf.fill",
+                    archetype: .generous
+                ),
+            ]
+        )
     ]
 
-    /// Tally the archetype votes across answered questions. Ties resolve
-    /// by SplurjArchetype.allCases ordering (builder first).
+    /// With a single-question quiz, the score is simply the picked option's
+    /// archetype. The signature stays the same so callers don't change.
     static func score(_ answers: [QuizOption]) -> SplurjArchetype {
-        var counts: [SplurjArchetype: Int] = [:]
-        for a in answers {
-            counts[a.archetype, default: 0] += 1
-        }
-        let ranked = SplurjArchetype.allCases.map { ($0, counts[$0] ?? 0) }
-        return ranked.max(by: { $0.1 < $1.1 })?.0 ?? .builder
+        answers.first?.archetype ?? .builder
     }
 }
 
