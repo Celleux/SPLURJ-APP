@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CloudKit
 
 enum PactJoinState: Equatable {
     case idle
