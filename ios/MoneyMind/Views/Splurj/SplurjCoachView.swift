@@ -1,10 +1,14 @@
 import SwiftUI
 
-// MARK: - Splurj Coach — v2
+// MARK: - Splurj Coach — v2 (canonical port of explorations/v2-coach.jsx)
 //
-// Emergency-first triage screen. Three zones: HRV status cards at the
-// top, AI money coach hero, and impulse-control grid. Port of the spirit
-// of v2-coach + states.jsx EmptyCoach (the "all clear" variant).
+// Three-group layout:
+//   RIGHT NOW      — one-tap intercepts for the next 5 minutes (SOS tools)
+//   PLAN AHEAD     — build guardrails while clear-headed (rules, plans)
+//   REFLECT & GROW — weekly review, money story, AI post-mortem
+//
+// Each tool tile fires a closure the host wires to a fullScreenCover of
+// the matching production view (UrgeSurfView, HALTCheckView, etc).
 
 struct SplurjCoachView: View {
     var variant: SplurjVariant = .her
@@ -12,6 +16,7 @@ struct SplurjCoachView: View {
     var equippedCosmetics: Set<CosmeticID> = []
     var isAllClear: Bool = true
     var hrv: String = "68ms"
+
     var onOpenSOS: () -> Void = {}
     var onUrgeSurf: () -> Void = {}
     var onHALT: () -> Void = {}
@@ -21,26 +26,30 @@ struct SplurjCoachView: View {
     var onACT: () -> Void = {}
     var onAICoach: () -> Void = {}
     var onDNSBlocking: () -> Void = {}
+    var onOpenProfile: () -> Void = {}
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    SplurjTopBar(title: "Coach", variant: variant, level: level) {
+                VStack(alignment: .leading, spacing: 22) {
+                    SplurjTopBar(
+                        title: "Coach",
+                        variant: variant,
+                        level: level,
+                        stateDotColor: isAllClear ? Theme.glow : Theme.honey,
+                        onAvatarTap: onOpenProfile
+                    ) {
                         SplurjMascotPlaceholder(variant: variant)
                     }
-                    VStack(spacing: 22) {
-                        if isAllClear {
-                            allClearBody
-                        } else {
-                            spikeBanner
-                        }
-                        emergencyRow
-                        aiCoachHero
-                        impulseGrid
+
+                    VStack(alignment: .leading, spacing: 22) {
+                        rightNowGroup
+                        planAheadGroup
+                        reflectGrowGroup
                     }
                     .padding(.horizontal, 22)
+
                     Spacer(minLength: 100)
                 }
                 .padding(.top, 8)
@@ -48,197 +57,186 @@ struct SplurjCoachView: View {
         }
     }
 
-    // MARK: - All-clear body
+    // MARK: - RIGHT NOW
 
-    private var allClearBody: some View {
-        VStack(spacing: 22) {
-            // Hero mascot + tagline
-            VStack(spacing: 14) {
-                SplurjMascot(
-                    variant: variant,
-                    stage: .sprout,
-                    cosmetics: equippedCosmetics,
-                    size: 160
-                )
-                    .padding(.top, 10)
-                Kicker("All clear · 0 alerts", color: Theme.glow)
-                Text(tagline)
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.textPrimary)
-                Text("HRV\u{2019}s steady, no spending windows open, no pacts under pressure. Take the win. Check back this evening.")
-                    .font(.system(size: 13.5))
-                    .foregroundStyle(Theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 14)
-            }
+    private var rightNowGroup: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            groupHeader(
+                icon: "exclamationmark.circle.fill",
+                label: "Right now",
+                caption: "One-tap intercepts for the next 5 minutes",
+                color: Theme.danger
+            )
 
-            VStack(spacing: 10) {
-                PrimaryCtaButton(title: "Plan tomorrow") { }
-                GhostLinkButton(title: "Open the archive") { }
-            }
+            coachTool(
+                featured: true,
+                kicker: "RECOMMENDED \u{00B7} 60s",
+                kickerColor: Theme.danger,
+                title: "Pause & Breathe",
+                sub: "HRV says stress is climbing. Box-breathe with Splurji before you tap Buy.",
+                icon: "lungs.fill",
+                action: onUrgeSurf
+            )
 
-            // Status cards
-            HStack(spacing: 8) {
-                statusCard(label: "HRV", value: hrv, color: Theme.glow)
-                statusCard(label: "BUDGETS", value: "OK", color: Theme.glow)
-                statusCard(label: "PACTS", value: "3/3", color: Theme.glow)
-            }
+            coachTool(
+                kicker: "HALT \u{00B7} 20s",
+                kickerColor: Theme.honey,
+                title: "HALT Check",
+                sub: "Hungry \u{00B7} Angry \u{00B7} Lonely \u{00B7} Tired? Pick one, get a redirect.",
+                icon: "hand.raised.fill",
+                action: onHALT
+            )
+
+            coachTool(
+                kicker: "SOS \u{00B7} EMERGENCY",
+                kickerColor: Theme.danger,
+                title: "Crisis help",
+                sub: "Full intercept screen with grounding + hotline options.",
+                icon: "shield.fill",
+                action: onOpenSOS
+            )
         }
     }
 
-    private var tagline: String {
-        switch variant {
-        case .her:     "Splurj is content."
-        case .him:     "Splurj is chill."
-        case .neutral: "Splurj\u{2019}s calm."
+    // MARK: - PLAN AHEAD
+
+    private var planAheadGroup: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            groupHeader(
+                icon: "calendar",
+                label: "Plan ahead",
+                caption: "Build guardrails while you\u{2019}re clear-headed",
+                color: Theme.sky
+            )
+
+            coachTool(
+                kicker: "SET RULE",
+                kickerColor: Theme.sky,
+                title: "Evening lockdown",
+                sub: "Auto-mute shopping apps 10pm\u{2013}8am. Splurji greets you instead.",
+                icon: "lock.fill",
+                action: onDNSBlocking
+            )
+
+            coachTool(
+                kicker: "IF-THEN \u{00B7} 2 MIN",
+                kickerColor: Theme.sky,
+                title: "Pre-set your response",
+                sub: "Draft one line: when X happens, I\u{2019}ll do Y instead.",
+                icon: "lightbulb.fill",
+                action: onIfThen
+            )
+
+            coachTool(
+                kicker: "COOLING OFF \u{00B7} 48h",
+                kickerColor: Theme.sky,
+                title: "Hold a purchase",
+                sub: "Park it for 48 hours. Splurji will ask how you feel then.",
+                icon: "timer",
+                action: onCoolDown
+            )
+
+            coachTool(
+                kicker: "1-SEC RULE",
+                kickerColor: Theme.sky,
+                title: "Breathe before the tap",
+                sub: "A single breath guide — inhale, pause, proceed.",
+                icon: "wind",
+                action: onOneSec
+            )
         }
     }
 
-    private func statusCard(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                .tracking(1.4)
-                .foregroundStyle(Theme.textMuted)
-            Text(value)
-                .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(color)
+    // MARK: - REFLECT & GROW
+
+    private var reflectGrowGroup: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            groupHeader(
+                icon: "star.fill",
+                label: "Reflect & grow",
+                caption: "What Splurji\u{2019}s noticing about you",
+                color: Theme.glow
+            )
+
+            coachTool(
+                kicker: "READY \u{00B7} 4 MIN",
+                kickerColor: Theme.glow,
+                title: "Your week, unpacked",
+                sub: "3 wins, 1 pattern, 1 thing to try. Splurji narrates.",
+                icon: "doc.text.fill",
+                action: onACT
+            )
+
+            coachTool(
+                kicker: "MONEY STORY",
+                kickerColor: Theme.glow,
+                title: "Talk to your coach",
+                sub: "Chat through what you\u{2019}re feeling. No judgment.",
+                icon: "bubble.left.and.bubble.right.fill",
+                action: onAICoach
+            )
         }
-        .frame(maxWidth: .infinity)
-        .padding(10)
-        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border, lineWidth: 1))
     }
 
-    // MARK: - Spike banner (engaged state)
+    // MARK: - Components
 
-    private var spikeBanner: some View {
+    private func groupHeader(icon: String, label: String, caption: String, color: Color) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Theme.danger)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Spike detected")
-                    .font(.system(size: 13, weight: .heavy))
-                    .foregroundStyle(Theme.textPrimary)
-                Text("HRV dip · breathe before the next tap.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textSecondary)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(Theme.danger.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.danger.opacity(0.4), lineWidth: 1))
-    }
-
-    // MARK: - Tool sections
-
-    private var emergencyRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker("Right now", color: Theme.danger)
-            HStack(spacing: 10) {
-                emergencyTile(title: "SOS", systemImage: "exclamationmark.shield.fill", tint: Theme.danger, action: onOpenSOS)
-                emergencyTile(title: "Urge\nSurf", systemImage: "wind", tint: Theme.accentSecondary, action: onUrgeSurf)
-                emergencyTile(title: "HALT\nCheck", systemImage: "hand.raised.fill", tint: Theme.honey, action: onHALT)
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(color)
+                .frame(width: 26, height: 26)
+                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.border, lineWidth: 1))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundStyle(color)
+                Text(caption)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Theme.textMuted)
             }
         }
     }
 
-    private func emergencyTile(title: String, systemImage: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func coachTool(
+        featured: Bool = false,
+        kicker: String,
+        kickerColor: Color,
+        title: String,
+        sub: String,
+        icon: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 48, height: 48)
-                    .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                Text(title)
-                    .font(.system(size: 11.5, weight: .heavy))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var aiCoachHero: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker("Reflect & grow", color: Theme.accentSecondary)
-            Button { onAICoach() } label: {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(Theme.accentDim)
-                            .frame(width: 56, height: 56)
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(Theme.honey)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("AI Money Coach")
-                            .font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("Talk through what you\u{2019}re feeling")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Theme.textMuted)
-                }
-                .padding(18)
-                .background(
-                    LinearGradient(
-                        colors: [Theme.cardTintHi, Theme.cardTint],
-                        startPoint: .top, endPoint: .bottom
-                    ),
-                    in: RoundedRectangle(cornerRadius: 22)
-                )
-                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Theme.borderHi, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var impulseGrid: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Kicker("Plan ahead", color: Theme.glow)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                toolTile(icon: "timer", title: "Cool Down", sub: "Wait it out with a countdown timer", action: onCoolDown)
-                toolTile(icon: "lightbulb.fill", title: "If-Then Plan", sub: "Pre-set your response to triggers", action: onIfThen)
-                toolTile(icon: "lungs.fill", title: "1-Second Rule", sub: "Pause before tempting apps", action: onOneSec)
-                toolTile(icon: "figure.mind.and.body", title: "Exercises", sub: "CBT & ACT techniques", action: onACT)
-                toolTile(icon: "shield.lefthalf.filled", title: "Block Apps", sub: "DNS wizard for tempting sites", action: onDNSBlocking)
-            }
-        }
-    }
-
-    private func toolTile(icon: String, title: String, sub: String, action: @escaping () -> Void) -> some View {
-        Button { action() } label: {
-            VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Color(hex: 0x1A1208))
-                    .frame(width: 40, height: 40)
-                    .background(Theme.honey, in: RoundedRectangle(cornerRadius: 10))
-                Text(title)
-                    .font(.system(size: 14, weight: .heavy))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(sub)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.system(size: featured ? 22 : 18, weight: .semibold))
+                    .foregroundStyle(kickerColor)
+                    .frame(width: featured ? 52 : 40, height: featured ? 52 : 40)
+                    .background(kickerColor.opacity(0.12), in: RoundedRectangle(cornerRadius: featured ? 16 : 12))
+                    .overlay(RoundedRectangle(cornerRadius: featured ? 16 : 12).strokeBorder(kickerColor.opacity(0.28), lineWidth: 1))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(kicker)
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .tracking(1.6)
+                        .foregroundStyle(kickerColor)
+                    Text(title)
+                        .font(.system(size: featured ? 15 : 13.5, weight: .heavy))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(sub)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.textMuted)
             }
+            .padding(featured ? 16 : 13)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
             .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 18))
             .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.border, lineWidth: 1))
         }
@@ -287,7 +285,6 @@ struct SplurjSOSView: View {
                 startRadius: 0,
                 endRadius: 350
             )
-            // Top warning stripe
             VStack {
                 Rectangle()
                     .fill(Theme.danger.opacity(0.7))
@@ -301,107 +298,94 @@ struct SplurjSOSView: View {
     private var content: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
-                Kicker("Spike detected · 11:23 pm", color: Theme.danger, tracking: 1.5)
+                Kicker("Spike detected \u{00B7} 11:23 pm", color: Theme.danger, tracking: 1.5)
                 (Text("Before you tap Buy at ") + Text(merchantName).foregroundStyle(Theme.honey) + Text("\u{2026}"))
                     .font(.system(size: 28, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(copy)
-                    .font(.system(size: 13))
+                Text("Splurji felt the spike. One minute with her, before the checkout.")
+                    .font(.system(size: 13.5))
                     .foregroundStyle(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .padding(.top, 90)
+            .padding(.horizontal, 22)
+            .padding(.top, 80)
 
-            // Breathing rings + mascot
+            Spacer(minLength: 16)
+
             ZStack {
-                ForEach(0..<3, id: \.self) { i in
+                ForEach(0..<3) { i in
                     Circle()
-                        .strokeBorder(Theme.glow.opacity(0.3 + Double(i) * 0.2), lineWidth: CGFloat(2 - i) * 0.3 + 1)
-                        .scaleEffect(0.7 + 0.3 * CGFloat(i))
+                        .stroke(Theme.glow.opacity(0.45 - Double(i) * 0.12), lineWidth: 1.5)
+                        .frame(width: 220 + CGFloat(i) * 32, height: 220 + CGFloat(i) * 32)
                 }
-                SplurjMascot(variant: variant, stage: .leafy, mood: .alert, size: 180)
+                SplurjMascot(variant: variant, stage: .leafy, size: 170)
             }
-            .frame(width: 280, height: 280)
-            .padding(.top, 28)
-            .overlay(alignment: .bottom) {
-                Kicker("Inhale · 4", color: Theme.glow, tracking: 2.2)
-                    .offset(y: 20)
-            }
+            .padding(.vertical, 10)
 
-            Spacer(minLength: 20)
+            Text("INHALE \u{00B7} 4")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(1.8)
+                .foregroundStyle(Theme.glow)
 
-            // Transaction preview
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Theme.cardTintHi)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 18))
-                            .foregroundStyle(Theme.textPrimary)
-                    )
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(merchantName) · Cart pending")
-                        .font(.system(size: 13.5, weight: .bold))
-                        .foregroundStyle(Theme.textPrimary)
-                    Text("$\(cartAmount).00 · checkout intercepted")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                Spacer()
-                Text("$\(cartAmount)")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.danger)
-            }
-            .padding(14)
-            .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-            .padding(.horizontal, 22)
+            Spacer(minLength: 16)
 
-            // Actions
-            VStack(spacing: 8) {
-                Button(action: onBreathe) {
-                    Text("Breathe with Splurj · 60s")
-                        .font(.system(size: 14, weight: .heavy))
-                        .foregroundStyle(Color(hex: 0x0B1614))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Theme.sosGradient, in: RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: Theme.glow.opacity(0.27), radius: 16, y: 8)
-                }
-                .buttonStyle(.plain)
-                Button(action: onHold) {
-                    Text("Send it to 48h hold")
-                        .font(.system(size: 12.5, weight: .heavy))
-                        .foregroundStyle(Theme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                Button(action: onProceedAnyway) {
-                    Text("Buy anyway · Splurj won\u{2019}t judge")
-                        .font(.system(size: 11.5, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted)
-                        .underline()
-                        .padding(.top, 2)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 32)
+            cartRow
+                .padding(.horizontal, 22)
+
+            actions
+                .padding(.horizontal, 22)
+                .padding(.top, 14)
+                .padding(.bottom, 30)
         }
     }
 
-    private var copy: String {
-        switch variant {
-        case .her:     "Splurj felt the spike. One minute with her, before the checkout."
-        case .him:     "Splurj saw that coming. Give him 60 seconds."
-        case .neutral: "Splurj flagged it. One breath before you commit."
+    private var cartRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "bag.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.honey)
+                .frame(width: 36, height: 36)
+                .background(Theme.honey.opacity(0.15), in: RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(merchantName) \u{00B7} Cart pending")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(Theme.textPrimary)
+                Text("$\(cartAmount).00 \u{00B7} checkout intercepted")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
+            Text("$\(cartAmount)")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .foregroundStyle(Theme.danger)
+        }
+        .padding(12)
+        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border, lineWidth: 1))
+    }
+
+    private var actions: some View {
+        VStack(spacing: 8) {
+            PrimaryCtaButton(title: "Breathe with Splurji \u{00B7} 60s", action: onBreathe)
+            Button(action: onHold) {
+                Text("Send it to 48h hold")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(Theme.cardTintHi, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.border, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            Button(action: onProceedAnyway) {
+                Text("Buy anyway \u{00B7} Splurji won\u{2019}t judge")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.textMuted)
+                    .underline()
+                    .padding(.top, 4)
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -414,87 +398,24 @@ struct SplurjSOSView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Theme.textPrimary)
                         .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06), in: Circle())
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+                        .background(Color.white.opacity(0.12), in: Circle())
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 58)
-                .padding(.trailing, 22)
             }
+            .padding(.top, 52)
+            .padding(.trailing, 22)
             Spacer()
         }
-    }
-}
-
-// MARK: - In-app banner (top-of-screen notification)
-
-struct SplurjInAppBanner: View {
-    var variant: SplurjVariant = .her
-    var title: String
-    var message: String
-    var color: Color = Theme.honey
-
-    var body: some View {
-        HStack(spacing: 11) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Theme.background)
-                .frame(width: 40, height: 40)
-                .overlay(
-                    SplurjMascotPlaceholder(variant: variant)
-                        .padding(4)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(color.opacity(0.33), lineWidth: 1)
-                )
-            VStack(alignment: .leading, spacing: 1) {
-                Kicker("Splurj", color: color, tracking: 2.0)
-                Text(title)
-                    .font(.system(size: 13, weight: .heavy))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(message)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(2)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(
-            LinearGradient(
-                colors: [color.opacity(0.12), color.opacity(0.04)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 16)
-        )
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(color.opacity(0.33), lineWidth: 1))
-        .shadow(color: color.opacity(0.15), radius: 18, y: 6)
     }
 }
 
 #if DEBUG
-#Preview("Splurj Coach") {
+#Preview("Coach · all clear") {
     SplurjCoachView(isAllClear: true)
 }
-
-#Preview("Splurj Coach · engaged") {
-    SplurjCoachView(isAllClear: false)
+#Preview("Coach · engaged") {
+    SplurjCoachView(isAllClear: false, hrv: "42ms")
 }
-
 #Preview("SOS intercept") {
     SplurjSOSView()
-}
-
-#Preview("In-app banner") {
-    VStack {
-        SplurjInAppBanner(
-            title: "Splurj flinched.",
-            message: "It\u{2019}s 11:23pm — her least favorite hour for your cart.",
-            color: Theme.danger
-        )
-        .padding()
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Theme.background)
 }
 #endif

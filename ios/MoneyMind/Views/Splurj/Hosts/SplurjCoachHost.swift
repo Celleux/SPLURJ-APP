@@ -12,6 +12,7 @@ struct SplurjCoachHost: View {
     @Environment(HealthKitService.self) private var healthKit
 
     @State private var activeTool: Tool?
+    @State private var showProfile = false
 
     enum Tool: String, Identifiable {
         case sos, urgeSurf, halt, coolDown, ifThen, oneSec, act, aiCoach, dnsBlocking
@@ -52,10 +53,16 @@ struct SplurjCoachHost: View {
             onOneSec:      { activeTool = .oneSec },
             onACT:         { activeTool = .act },
             onAICoach:     { activeTool = .aiCoach },
-            onDNSBlocking: { activeTool = .dnsBlocking }
+            onDNSBlocking: { activeTool = .dnsBlocking },
+            onOpenProfile: { showProfile = true }
         )
         .fullScreenCover(item: $activeTool) { tool in
             destination(for: tool)
+        }
+        .sheet(isPresented: $showProfile) {
+            SplurjProfileHost()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 
