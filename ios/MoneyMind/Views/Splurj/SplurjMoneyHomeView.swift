@@ -153,7 +153,13 @@ struct SplurjMoneyHomeView: View {
             Kicker("Saved this month", color: Theme.textMuted, tracking: 2.0)
             Text(formattedSaved)
                 .font(.system(size: 64, weight: .black, design: .rounded))
-                .foregroundStyle(Theme.glow)
+                .tracking(-2)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.white, Color(hex: 0xC8F088)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                )
                 .shadow(color: Theme.glow.opacity(0.35), radius: 16)
                 .monospacedDigit()
             deltaChip
@@ -212,12 +218,21 @@ struct SplurjMoneyHomeView: View {
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(Theme.textPrimary)
                 HStack(alignment: .bottom) {
-                    MiniSparkline(values: [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68])
-                        .stroke(
-                            hrvState.chipColor,
-                            style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
-                        )
-                        .frame(height: 28)
+                    ZStack(alignment: .bottom) {
+                        MiniSparklineFill(values: [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68])
+                            .fill(
+                                LinearGradient(
+                                    colors: [hrvState.chipColor.opacity(0.35), hrvState.chipColor.opacity(0.0)],
+                                    startPoint: .top, endPoint: .bottom
+                                )
+                            )
+                        MiniSparkline(values: [0.32, 0.41, 0.38, 0.52, 0.61, 0.58, 0.69, 0.72, 0.68])
+                            .stroke(
+                                hrvState.chipColor,
+                                style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                            )
+                    }
+                    .frame(height: 34)
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(hrvText)
@@ -247,7 +262,7 @@ struct SplurjMoneyHomeView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Theme.honey.opacity(0.18))
                         .frame(width: 44, height: 44)
-                    Image(systemName: "flame.fill")
+                    Image(systemName: "leaf.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Theme.honey)
                 }
@@ -329,6 +344,29 @@ struct SplurjMoneyHomeView: View {
 //
 // Lightweight Shape for the HRV line. No Charts import — keeps the view
 // cheap and flicker-free on scroll.
+
+struct MiniSparklineFill: Shape {
+    let values: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard values.count > 1 else { return path }
+        let stepX = rect.width / CGFloat(values.count - 1)
+        let minV = values.min() ?? 0
+        let maxV = values.max() ?? 1
+        let range = max(0.0001, maxV - minV)
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        for (i, v) in values.enumerated() {
+            let x = rect.minX + CGFloat(i) * stepX
+            let normalized = (v - minV) / range
+            let y = rect.maxY - CGFloat(normalized) * rect.height
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
 
 struct MiniSparkline: Shape {
     let values: [Double]
