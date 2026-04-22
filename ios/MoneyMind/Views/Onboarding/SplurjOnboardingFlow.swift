@@ -3,91 +3,108 @@ import SwiftData
 
 // MARK: - Onboarding flow root
 //
-// 5 screens: Splash → Choose → Quiz → Reveal → Paywall. Each screen
-// pulls state from a single shared model so "back" preserves answers.
-// Ships as a standalone flow — Chunk 5 decides whether to replace the
-// existing OnboardingView or show this new flow for first-run users.
+// 5 steps: Splash → Choose → Quiz (5 sub-questions) → Reveal → Paywall.
+// Quiz drives SplurjQuiz.score → SplurjArchetype. Every copy point
+// routes through the copy pack.
 
 struct SplurjOnboardingFlow: View {
-    @State private var step: Int = 0
+    @State private var step: Step = .splash
     @State private var variant: SplurjVariant? = nil
-    @State private var dnaAnswer: DnaAnswer? = nil
+    @State private var answers: [QuizOption] = []
+    @State private var quizIndex: Int = 0
     @State private var plan: PaywallPlan = .year
-    var onComplete: (SplurjVariant, DnaAnswer) -> Void
+    var onComplete: (SplurjVariant, SplurjArchetype) -> Void
+
+    enum Step { case splash, choose, quiz, reveal, paywall }
 
     var body: some View {
         ZStack {
             switch step {
-            case 0: SplashScreen(onNext: advance)
-            case 1: ChooseScreen(variant: $variant, onNext: advance, onBack: back)
-            case 2: QuizScreen(variant: variant ?? .her, answer: $dnaAnswer, onNext: advance, onBack: back)
-            case 3: RevealScreen(variant: variant ?? .her, answer: dnaAnswer ?? .stress, onNext: advance, onBack: back)
-            default: PaywallScreen(variant: variant ?? .her, plan: $plan, onStart: completeFlow, onBack: back)
+            case .splash:  SplashScreen(onNext: advance)
+            case .choose:  ChooseScreen(variant: $variant, onNext: advance, onBack: back)
+            case .quiz:
+                QuizScreen(
+                    variant: variant ?? .her,
+                    question: SplurjQuiz.questions[quizIndex],
+                    questionIndex: quizIndex,
+                    onAnswer: handleAnswer,
+                    onBack: backFromQuiz
+                )
+            case .reveal:
+                RevealScreen(
+                    variant: variant ?? .her,
+                    archetype: resolvedArchetype,
+                    onNext: advance,
+                    onBack: back
+                )
+            case .paywall:
+                PaywallScreen(
+                    variant: variant ?? .her,
+                    archetype: resolvedArchetype,
+                    plan: $plan,
+                    onStart: completeFlow,
+                    onBack: back
+                )
             }
         }
         .preferredColorScheme(.dark)
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: step)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: quizIndex)
     }
 
-    private func advance() { step = min(step + 1, 4) }
-    private func back() { step = max(step - 1, 0) }
+    private var resolvedArchetype: SplurjArchetype {
+        answers.isEmpty ? .builder : SplurjQuiz.score(answers)
+    }
+
+    private func advance() {
+        switch step {
+        case .splash:  step = .choose
+        case .choose:  quizIndex = 0; answers = []; step = .quiz
+        case .quiz:    step = .reveal   // shouldn't be called — quiz advances itself
+        case .reveal:  step = .paywall
+        case .paywall: break
+        }
+    }
+
+    private func back() {
+        switch step {
+        case .splash:  break
+        case .choose:  step = .splash
+        case .quiz:    break
+        case .reveal:  quizIndex = SplurjQuiz.questions.count - 1; answers = Array(answers.dropLast()); step = .quiz
+        case .paywall: step = .reveal
+        }
+    }
+
+    private func handleAnswer(_ option: QuizOption) {
+        answers.append(option)
+        if quizIndex + 1 < SplurjQuiz.questions.count {
+            quizIndex += 1
+        } else {
+            step = .reveal
+        }
+    }
+
+    private func backFromQuiz() {
+        if quizIndex > 0 {
+            quizIndex -= 1
+            if !answers.isEmpty { answers.removeLast() }
+        } else {
+            step = .choose
+        }
+    }
 
     private func completeFlow() {
-        guard let v = variant, let a = dnaAnswer else { return }
-        onComplete(v, a)
+        guard let v = variant else { return }
+        onComplete(v, resolvedArchetype)
     }
 }
 
-// MARK: - Model bits
-
-nonisolated enum DnaAnswer: String, CaseIterable, Sendable {
-    case stress, social, reward, bored, other
-
-    var label: String {
-        switch self {
-        case .stress: "Stress & bad days"
-        case .social: "FOMO & social spirals"
-        case .reward: "I-earned-it rewards"
-        case .bored:  "Boredom & dopamine dips"
-        case .other:  "Something else"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .stress: "HALT triggers · emotional spending"
-        case .social: "Friends buying · late-night scrolling"
-        case .reward: "Payday splurges · \u{201C}treat yourself\u{201D}"
-        case .bored:  "Apps open · nothing to do"
-        case .other:  "Tell Splurj what you notice"
-        }
-    }
-
-    var emoji: String {
-        switch self {
-        case .stress: "\u{1F327}"     // 🌧
-        case .social: "\u{1F440}"     // 👀
-        case .reward: "\u{2728}"      // ✨
-        case .bored:  "\u{1F300}"     // 🌀
-        case .other:  "\u{1F331}"     // 🌱
-        }
-    }
-
-    /// Headline revealed on step 4.
-    var dnaLabel: String {
-        switch self {
-        case .stress: "Stress Shield"
-        case .social: "FOMO Fighter"
-        case .reward: "Reward Reframer"
-        case .bored:  "Boredom Buster"
-        case .other:  "Custom Track"
-        }
-    }
-}
+// MARK: - Paywall plan
 
 enum PaywallPlan: String, CaseIterable { case month, year }
 
-// MARK: - Shared screen chrome
+// MARK: - Shared chrome
 
 private struct OnboardingBackButton: View {
     var action: () -> Void
@@ -121,15 +138,8 @@ private struct SplashScreen: View {
                 ZStack {
                     VStack(spacing: 12) {
                         Kicker("The Finance Garden", tracking: 2.5)
-                        Text("splurj")
-                            .font(.system(size: 64, weight: .black, design: .rounded))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.white, Color(hex: 0xC8F088)],
-                                    startPoint: .top, endPoint: .bottom
-                                )
-                            )
-                        Text("A tiny creature that grows when you\nsave — and wilts when you splurge.")
+                        SplurjWordmark(height: 56)
+                        Text(copy(.taglineHero, for: .her))
                             .font(.system(size: 14))
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Theme.textSecondary)
@@ -296,12 +306,13 @@ private struct VariantCard: View {
     }
 }
 
-// MARK: - 03 · DNA Quiz
+// MARK: - 03 · Quiz (5 questions)
 
 private struct QuizScreen: View {
     let variant: SplurjVariant
-    @Binding var answer: DnaAnswer?
-    var onNext: () -> Void
+    let question: QuizQuestion
+    let questionIndex: Int
+    var onAnswer: (QuizOption) -> Void
     var onBack: () -> Void
 
     var body: some View {
@@ -318,86 +329,83 @@ private struct QuizScreen: View {
 
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 14) {
-                        Tag("02 · Splurge DNA", color: Theme.honey)
-                        Text("When do you splurge most?")
+                        Tag("Question \(String(format: "%02d", question.id)) / 05",
+                            color: Theme.honey)
+                        Text(question.prompt)
                             .font(.system(size: 28, weight: .heavy, design: .rounded))
                             .foregroundStyle(Theme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
-                    SplurjMascot(variant: variant, stage: .sprout, size: 96)
-                        .frame(width: 100, height: 100)
+                    SplurjMascot(
+                        variant: variant,
+                        stage: stageForQuestion(question.id),
+                        size: 96
+                    )
+                    .frame(width: 100, height: 100)
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 36)
 
-                VStack(spacing: 8) {
-                    ForEach(DnaAnswer.allCases, id: \.self) { option in
-                        answerRow(option)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 28)
-
-                Spacer()
-
-                PrimaryCtaButton(title: "Continue", disabled: answer == nil) {
-                    onNext()
-                }
-                .padding(.horizontal, 28)
-                .padding(.bottom, 36)
-            }
-        }
-    }
-
-    private func answerRow(_ option: DnaAnswer) -> some View {
-        let selected = answer == option
-        return Button {
-            answer = option
-        } label: {
-            HStack(spacing: 12) {
-                Text(option.emoji)
-                    .font(.system(size: 20))
-                    .frame(width: 38, height: 38)
-                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(option.label)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.textPrimary)
-                    Text(option.subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                Spacer()
-                Circle()
-                    .strokeBorder(selected ? Theme.glow : Theme.textMuted.opacity(0.5), lineWidth: 2)
-                    .frame(width: 22, height: 22)
-                    .background(
-                        Circle()
-                            .fill(selected ? Theme.glow : .clear)
-                            .frame(width: 22, height: 22)
-                    )
-                    .overlay {
-                        if selected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .black))
-                                .foregroundStyle(Theme.background)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 8) {
+                        ForEach(question.options) { opt in
+                            QuizOptionRow(option: opt) { onAnswer(opt) }
                         }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 28)
+                }
+
+                Spacer(minLength: 20)
             }
-            .padding(.vertical, 12).padding(.horizontal, 14)
-            .background(
-                selected
-                ? AnyShapeStyle(LinearGradient(colors: [Theme.glow.opacity(0.22), Theme.glow.opacity(0.08)], startPoint: .top, endPoint: .bottom))
-                : AnyShapeStyle(Color.white.opacity(0.03))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .id("quiz-\(question.id)")
+        .transition(.asymmetric(
+            insertion: .opacity.combined(with: .offset(x: 40)),
+            removal: .opacity.combined(with: .offset(x: -40))
+        ))
+    }
+
+    private func stageForQuestion(_ q: Int) -> SlimeStage {
+        // Mascot "grows" as the quiz progresses — visual reward loop
+        [.seedling, .sprout, .grass, .leafy, .flowering][max(0, min(4, q - 1))]
+    }
+}
+
+private struct QuizOptionRow: View {
+    let option: QuizOption
+    var onSelect: () -> Void
+    @State private var tapped = false
+
+    var body: some View {
+        Button {
+            tapped = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { onSelect() }
+        } label: {
+            HStack(spacing: 12) {
+                Text(option.label)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.textMuted)
+            }
+            .padding(.vertical, 14).padding(.horizontal, 16)
+            .background(tapped ? Theme.glow.opacity(0.2) : Theme.cardTint,
+                        in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(selected ? Theme.glow : Theme.border, lineWidth: 1.5)
+                    .strokeBorder(tapped ? Theme.glow : Theme.border, lineWidth: 1)
             )
+            .scaleEffect(tapped ? 0.97 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: tapped)
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: tapped)
     }
 }
 
@@ -405,10 +413,11 @@ private struct QuizScreen: View {
 
 private struct RevealScreen: View {
     let variant: SplurjVariant
-    let answer: DnaAnswer
+    let archetype: SplurjArchetype
     var onNext: () -> Void
     var onBack: () -> Void
     @State private var appeared = false
+    @State private var fireBurst = false
 
     var body: some View {
         TerrariumBG(withStump: true) {
@@ -422,57 +431,61 @@ private struct RevealScreen: View {
                 }
                 .padding(.horizontal, 28).padding(.top, 16)
 
-                // Aura + mascot
                 ZStack {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [Theme.glow.opacity(0.35), .clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 180
+                                colors: [archetype.pitch.accent.opacity(0.4), .clear],
+                                center: .center, startRadius: 0, endRadius: 180
                             )
                         )
                         .frame(width: 320, height: 320)
-                    SplurjMascot(variant: variant, stage: .seedling, size: 220)
-                        .scaleEffect(appeared ? 1 : 0.7)
-                        .opacity(appeared ? 1 : 0)
+                    SplurjMascot(
+                        variant: variant,
+                        stage: .seedling,
+                        personality: personality(for: archetype),
+                        size: 220
+                    )
+                    .scaleEffect(appeared ? 1 : 0.7)
+                    .opacity(appeared ? 1 : 0)
+
+                    CoinBurstOverlay(fire: $fireBurst, count: 12, color: archetype.pitch.accent)
                 }
                 .padding(.top, 20)
 
                 VStack(alignment: .center, spacing: 10) {
-                    Tag("Your Splurj is born", color: Theme.honey)
-                    (
-                        Text("Meet your ") + Text(answer.dnaLabel)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: 0xFFF4C4), Theme.honey],
-                                    startPoint: .top, endPoint: .bottom
-                                )
+                    Text(archetype.pitch.sigil)
+                        .font(.system(size: 42))
+                        .foregroundStyle(archetype.pitch.accent)
+                    Kicker(archetype.pitch.kicker, color: Theme.honey, tracking: 3.0)
+                    Text(archetype.pitch.name)
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, archetype.pitch.accent],
+                                startPoint: .top, endPoint: .bottom
                             )
-                    )
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.textPrimary)
-
-                    Text(subcopy)
-                        .font(.system(size: 13))
+                        )
+                    Text(archetype.pitch.description)
+                        .font(.system(size: 14))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(Theme.textSecondary)
                         .padding(.horizontal, 22)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
-                .padding(.top, 24)
+                .padding(.top, 14)
 
-                // Stats row
-                HStack(spacing: 8) {
-                    statPill(label: "LV", value: "01")
-                    statPill(label: "STAGE", value: "Seed")
-                    statPill(label: "DNA", value: answer.dnaLabel.components(separatedBy: " ").first ?? "DNA")
+                HStack(spacing: 10) {
+                    ForEach(archetype.pitch.stats, id: \.self) { stat in
+                        Kicker(stat, color: Theme.textMuted, tracking: 1.8)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(Theme.cardTint, in: Capsule())
+                            .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 1))
+                    }
                 }
                 .padding(.horizontal, 28)
-                .padding(.top, 28)
+                .padding(.top, 16)
 
                 Spacer()
 
@@ -485,32 +498,21 @@ private struct RevealScreen: View {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                 appeared = true
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                fireBurst = true
+            }
         }
     }
 
-    private var subcopy: String {
-        switch variant {
-        case .her:     "She\u{2019}ll grow as you save, meditate, and hit pacts. She starts as a seedling."
-        case .him:     "He\u{2019}ll grow as you save, meditate, and hit pacts. He starts as a seedling."
-        case .neutral: "They\u{2019}ll grow as you save, meditate, and hit pacts. They start as a seedling."
+    private func personality(for a: SplurjArchetype) -> SplurjPersonality? {
+        // Map archetype → personality tint for the mascot aura
+        switch a {
+        case .builder:    .builder
+        case .empath:     .empath
+        case .riser:      .hustler    // tint-only; name stays "Riser" everywhere user-facing
+        case .minimalist: .minimalist
+        case .generous:   .generous
         }
-    }
-
-    private func statPill(label: String, value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .tracking(1.4)
-                .foregroundStyle(Theme.textMuted)
-            Text(value)
-                .font(.system(size: 14, weight: .heavy))
-                .foregroundStyle(Theme.glow)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.border, lineWidth: 1))
     }
 }
 
@@ -518,6 +520,7 @@ private struct RevealScreen: View {
 
 private struct PaywallScreen: View {
     let variant: SplurjVariant
+    let archetype: SplurjArchetype
     @Binding var plan: PaywallPlan
     var onStart: () -> Void
     var onBack: () -> Void
@@ -534,13 +537,18 @@ private struct PaywallScreen: View {
                 }
                 .padding(.horizontal, 28).padding(.top, 16)
 
-                SplurjMascot(variant: variant, stage: .flowering, size: 170)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 12)
+                SplurjMascot(
+                    variant: variant,
+                    stage: .flowering,
+                    personality: personality(for: archetype),
+                    size: 170
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Tag("Splurj+ · Start free", color: Theme.honey)
-                    Text("Help your Splurj\nreach full bloom.")
+                    Text("help me reach\nfull bloom.")
                         .font(.system(size: 30, weight: .heavy, design: .rounded))
                         .foregroundStyle(Theme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -550,7 +558,7 @@ private struct PaywallScreen: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     feature("All 6 evolution stages", detail: "seed → bonsai")
-                    feature("AI Money Coach", detail: "1-tap Pause & Breathe, HALT check, SOS")
+                    feature("AI Money Coach", detail: "SOS intercept, pause & breathe, HALT check")
                     feature("Unlimited Pacts", detail: "pool money with friends, hold each other honest")
                     feature("Apple Health HRV", detail: "catch stress spirals before they spend")
                 }
@@ -559,7 +567,7 @@ private struct PaywallScreen: View {
 
                 HStack(spacing: 10) {
                     planCard(.month, title: "Monthly", price: "$9.99", sub: "/mo · cancel any time", badge: nil)
-                    planCard(.year, title: "Yearly", price: "$59", sub: "$4.91/mo · save 50%", badge: "BEST")
+                    planCard(.year, title: "Yearly", price: "$49.99", sub: "$4.16/mo · save 58%", badge: "BEST")
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -569,7 +577,7 @@ private struct PaywallScreen: View {
                 VStack(spacing: 2) {
                     PrimaryCtaButton(title: "Start 7-day free trial") { onStart() }
                     HStack(spacing: 2) {
-                        Text("Then $4.91/mo · cancel anytime · ")
+                        Text("Then $4.16/mo · cancel anytime · ")
                             .foregroundStyle(Theme.textMuted)
                         Text("Restore")
                             .foregroundStyle(Theme.textSecondary)
@@ -636,12 +644,22 @@ private struct PaywallScreen: View {
         }
         .buttonStyle(.plain)
     }
+
+    private func personality(for a: SplurjArchetype) -> SplurjPersonality? {
+        switch a {
+        case .builder:    .builder
+        case .empath:     .empath
+        case .riser:      .hustler
+        case .minimalist: .minimalist
+        case .generous:   .generous
+        }
+    }
 }
 
 #if DEBUG
 #Preview("Onboarding flow") {
     SplurjOnboardingFlow { v, a in
-        print("Flow completed: \(v), \(a)")
+        print("Completed: variant=\(v) archetype=\(a)")
     }
 }
 #endif

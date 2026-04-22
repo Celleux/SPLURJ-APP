@@ -2,17 +2,18 @@ import Foundation
 
 // MARK: - Pronouns
 //
-// One atom that everything else composes from. Resolves from SplurjVariant.
-// Keys are explicit rather than subscripted — the compiler holds us to the
-// six forms so we can't silently drift across variants.
+// Preserved as an atom for any copy that names the user in 3rd person
+// (rare under the new voice — Splurj talks in first person "i"). Still
+// shipped because a few legacy strings and future share-card text may
+// need pronoun substitution.
 
 nonisolated struct SplurjPronouns: Sendable {
-    let they: String        // "she" / "he" / "they"
-    let their: String       // "her" / "his" / "their"
-    let them: String        // "her" / "him" / "them"
-    let reflexive: String   // "herself" / "himself" / "themself"
-    let isAre: String       // "is" / "is" / "are"
-    let possessive: String  // "hers" / "his" / "theirs"
+    let they: String
+    let their: String
+    let them: String
+    let reflexive: String
+    let isAre: String
+    let possessive: String
 }
 
 extension SplurjVariant {
@@ -36,38 +37,53 @@ extension SplurjVariant {
 
 // MARK: - Copy keys
 //
-// One case per user-visible string. Associated values carry the template
-// arguments — compiler-checked so we can't call a greeting key without a
-// name or a celebration key without a level.
+// Every single-string user-facing copy point in the app. Structured
+// groups:
+//   greet*       — Home greetings
+//   nudge*       — in-app intercept banners
+//   celebrate*   — level-ups, pacts, streaks
+//   error*       — sync / HRV edge cases
+//   share*       — share-card titles (secondary to the new Share views)
+//   voice*       — the new Copy Pack's in-product tagline surfaces
 //
-// Sourced directly from explorations/copy-seam.jsx (COPY_MAP). Anytime a
-// new copy key is added in the prototype, add it here + provide resolvers
-// for all three variants — the exhaustive `resolve(for:)` switch below
-// will refuse to compile until you do.
+// Voice (Copy Pack §05):
+//   · lowercase openings ("morning. ready?" not "Good morning!")
+//   · Splurj speaks first-person "i"
+//   · specific numbers, short sentences
+//   · approved emoji only: 🔥 🌙 ☕ ✨ 🏆
+//
+// Most new keys return the SAME string across the three variants because
+// Splurj's voice uses first-person; pronouns only re-appear when the
+// copy references the user in third person (rare).
 
 nonisolated enum CopyKey: Sendable, Hashable {
-    // Greetings — Home, rotated by time of day
+    // Greetings (rewritten in new voice)
     case greetEvening(name: String)
     case greetMorning(name: String)
     case greetPayday(name: String)
 
-    // Nudges (intercepts) — fire when a risky purchase is detected
+    // Nudges — short "i" voice intercepts
     case nudgeLatenight
     case nudgeHrv
     case nudgeOverBudget(amount: Int)
 
-    // Celebrations — streaks, level-ups, pact wins
+    // Celebrations
     case celebrateStreak(days: Int)
     case celebrateLevelup(level: Int)
     case celebratePactWon(partner: String)
 
-    // Errors & edge cases — sync failures, missing HRV
+    // Errors
     case errorSync
     case errorNoHrv
 
-    // Share-card titles — Instagram / iMessage exports
+    // Share-card titles (condensed — full share cards render via
+    // ShareCard* views; these are fallback social captions.)
     case shareStreak(days: Int)
     case shareSaved(amount: Int)
+
+    // New Copy Pack additions
+    case taglineHero           // onboarding hero sub-tagline
+    case seamCodeMarker        // dev-only string kept for analytics
 }
 
 // MARK: - Resolver
@@ -77,83 +93,42 @@ extension CopyKey {
         switch self {
 
         case .greetEvening(let n):
-            switch variant {
-            case .her:     return "Evening, \(n). Splurj\u{2019}s curled up."
-            case .him:     return "Evening, \(n). Splurj\u{2019}s tucked in."
-            case .neutral: return "Evening, \(n). Splurj\u{2019}s resting."
-            }
+            // First-person: Splurj says "i'm"
+            return "evening, \(n). i\u{2019}m curled up."
 
         case .greetMorning(let n):
-            switch variant {
-            case .her:     return "Morning, \(n). She\u{2019}s waiting by the window."
-            case .him:     return "Morning, \(n). He\u{2019}s already out stretching."
-            case .neutral: return "Morning, \(n). They\u{2019}re up and about."
-            }
+            // First-person: Splurj is the one stretching
+            return "morning, \(n). i\u{2019}m already up."
 
         case .greetPayday(let n):
-            switch variant {
-            case .her:     return "\(n), money just landed. Splurj grew half an inch."
-            case .him:     return "\(n), paycheck hit. Splurj noticed."
-            case .neutral: return "\(n), funds are in. Splurj felt it."
-            }
+            return "\(n), paycheck hit. i grew half an inch."
 
         case .nudgeLatenight:
-            switch variant {
-            case .her:     return "Splurj flinched. It\u{2019}s 11:23pm \u{2014} her least favorite hour for your cart."
-            case .him:     return "Splurj perked up. 11:23pm. You know what he\u{2019}s going to say."
-            case .neutral: return "Splurj stirred. It\u{2019}s 11:23pm \u{2014} your pattern hour."
-            }
+            return "it\u{2019}s 11:23pm. your pattern hour. one breath first?"
 
         case .nudgeHrv:
-            switch variant {
-            case .her:     return "Your HRV\u{2019}s dipping. Splurj wants to breathe with you first."
-            case .him:     return "HRV\u{2019}s climbing the wrong way. Splurj says pause \u{2014} 60 seconds."
-            case .neutral: return "Signals are spiking. Splurj suggests a breath."
-            }
+            return "hrv\u{2019}s dipping. breathe with me — 60s."
 
         case .nudgeOverBudget(let amount):
-            switch variant {
-            case .her:     return "This lands you $\(amount) over Shopping. Splurj hid her leaves."
-            case .him:     return "\(amount) dollars past Shopping. Splurj isn\u{2019}t judging \u{2014} just noticing."
-            case .neutral: return "$\(amount) over Shopping. Splurj\u{2019}s keeping count with you."
-            }
+            return "$\(amount) over shopping. not a lecture — just a heads-up."
 
         case .celebrateStreak(let days):
-            switch variant {
-            case .her:     return "\(days) days. Splurj\u{2019}s blooming \u{2014} look at her."
-            case .him:     return "\(days) days clean. Splurj grew a new leaf."
-            case .neutral: return "\(days) in a row. Splurj\u{2019}s unmistakably bigger."
-            }
+            return "\(days) days. unmistakably bigger. \u{1F525}"
 
         case .celebrateLevelup(let lv):
-            switch variant {
-            case .her:     return "Level \(lv). Splurj unfurled her canopy."
-            case .him:     return "Level \(lv). Splurj hit leafy-cap stage."
-            case .neutral: return "Level \(lv). Splurj\u{2019}s fully-leaved now."
-            }
+            return "level \(lv). i\u{2019}m taller. look what we did. \u{2728}"
 
         case .celebratePactWon(let partner):
-            switch variant {
-            case .her:     return "You and \(partner) held the line. Splurj\u{2019}s proud."
-            case .him:     return "You + \(partner): solid. Splurj is doing a little shake."
-            case .neutral: return "You both kept the pact. Splurj approves."
-            }
+            return "you and \(partner) held the line. proud."
 
         case .errorSync:
-            switch variant {
-            case .her:     return "Splurj lost her signal. Reconnect when you can."
-            case .him:     return "Splurj is offline. No rush \u{2014} we\u{2019}ll reconnect."
-            case .neutral: return "Splurj\u{2019}s offline. No pressure \u{2014} reconnect later."
-            }
+            return "i\u{2019}m offline. no rush — we\u{2019}ll reconnect."
 
         case .errorNoHrv:
-            switch variant {
-            case .her:     return "No wrist data today. Splurj\u{2019}s eyes are closed for this one."
-            case .him:     return "No HRV signal. Splurj is flying blind on mood today."
-            case .neutral: return "No HRV. Splurj can\u{2019}t read your signals right now."
-            }
+            return "no hrv today. flying blind on mood — still with you."
 
         case .shareStreak(let days):
+            // Variant-aware: share captions reference the mascot by pronoun
             switch variant {
             case .her:     return "Splurj and me \u{00B7} \(days) days"
             case .him:     return "\(days) days with Splurj"
@@ -163,19 +138,20 @@ extension CopyKey {
         case .shareSaved(let amount):
             switch variant {
             case .her:     return "Splurj helped me save $\(amount)"
-            case .him:     return "Splurj \u{00B7} $\(amount) saved"
-            case .neutral: return "Splurj \u{00B7} $\(amount) saved"
+            case .him, .neutral: return "Splurj \u{00B7} $\(amount) saved"
             }
+
+        case .taglineHero:
+            return "a tiny creature that grows when you save — and wilts when you splurge."
+
+        case .seamCodeMarker:
+            return "copy-seam.v2"
         }
     }
 }
 
 // MARK: - Public API
-//
-// Every user-facing string should go through this function. Pulls the
-// user's variant from the model layer (UserProfile.splurj later) — for
-// now the caller passes it explicitly.
 
-func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
+public func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
     key.resolve(for: variant)
 }
