@@ -16,28 +16,38 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Home", systemImage: "house", value: .home) {
+            Tab(value: AppTab.home) {
                 SplurjMoneyHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Home") } icon: { SplurjNavIconView(icon: .home) }
             }
-            Tab("Coach", systemImage: "brain.head.profile.fill", value: .coach) {
+            Tab(value: AppTab.coach) {
                 SplurjCoachHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Coach") } icon: { SplurjNavIconView(icon: .coach) }
             }
-            Tab("Wallet", systemImage: "wallet.bifold", value: .wallet) {
+            Tab(value: AppTab.wallet) {
                 SplurjWalletHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Wallet") } icon: { SplurjNavIconView(icon: .wallet) }
             }
-            Tab("Pacts", systemImage: "person.2.fill", value: .pacts) {
+            Tab(value: AppTab.pacts) {
                 SplurjPactsHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Pacts") } icon: { SplurjNavIconView(icon: .pacts) }
             }
-            Tab("Hub", systemImage: "leaf.fill", value: .hub) {
+            Tab(value: AppTab.hub) {
                 SplurjHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Hub") } icon: { SplurjNavIconView(icon: .hub) }
             }
         }
-        .tint(Theme.accent)
+        .tint(Theme.glow)
         .sensoryFeedback(.selection, trigger: selectedTab)
         .fullScreenCover(isPresented: $showSiriUrgeSurf) {
             UrgeSurfView(siriTriggered: true)
