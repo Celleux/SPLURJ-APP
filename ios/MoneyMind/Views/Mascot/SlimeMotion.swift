@@ -284,9 +284,9 @@ struct EvolutionCeremony: View {
     @ViewBuilder
     private func variantStage(_ stage: SlimeStage) -> some View {
         switch variant {
-        case .her:     SlimeHerStage(stage: stage)
-        case .him:     SlimeHimStage(stage: stage)
-        case .neutral: SlimeNeutralStage(stage: stage)
+        case .her:     SlimeHerStage(stage)
+        case .him:     SlimeHimStage(stage)
+        case .neutral: SlimeNeutralStage(stage)
         }
     }
 }

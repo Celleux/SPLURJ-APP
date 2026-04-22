@@ -420,7 +420,7 @@ struct SplurjInAppBanner: View {
                 Text(title)
                     .font(.system(size: 13, weight: .heavy))
                     .foregroundStyle(Theme.textPrimary)
-                Text(body)
+                Text(message)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)

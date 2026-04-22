@@ -226,7 +226,7 @@ struct SplurjHomeView: View {
     private var unlocksSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Kicker("Available now", tracking: 1.4, color: Theme.textMuted)
+                Kicker("Available now", color: Theme.textMuted, tracking: 1.4)
                 Spacer()
                 Text("3 unlocks")
                     .font(.system(size: 11))
@@ -272,14 +272,14 @@ struct SplurjHomeView: View {
 
     private var collectionContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Kicker("Evolution stages", tracking: 1.4, color: Theme.textMuted)
+            Kicker("Evolution stages", color: Theme.textMuted, tracking: 1.4)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(SlimeStage.allCases) { s in
                     stageCard(s)
                 }
             }
 
-            Kicker("Cosmetics · 7 / 24", tracking: 1.4, color: Theme.textMuted)
+            Kicker("Cosmetics · 7 / 24", color: Theme.textMuted, tracking: 1.4)
                 .padding(.top, 6)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                 ForEach(0..<12, id: \.self) { i in

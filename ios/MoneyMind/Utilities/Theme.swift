@@ -2,7 +2,7 @@ import SwiftUI
 
 typealias Typography = Theme.Typography
 
-enum Theme {
+nonisolated enum Theme {
 
     // MARK: - Night Terrarium (Splurj mascot-first palette)
     //

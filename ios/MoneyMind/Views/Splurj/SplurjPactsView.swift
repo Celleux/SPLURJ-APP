@@ -242,7 +242,7 @@ private struct PactCard: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack {
-                Kicker("Day \(streak)/\(days)", tracking: 1.4, color: Theme.textMuted)
+                Kicker("Day \(streak)/\(days)", color: Theme.textMuted, tracking: 1.4)
                 Spacer()
                 Text("POT · $\(pot)")
                     .font(.system(size: 10, weight: .heavy, design: .monospaced))
