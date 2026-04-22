@@ -2,6 +2,25 @@ import SwiftUI
 import SwiftData
 import PhosphorSwift
 
+nonisolated enum ProfileSegment: String, CaseIterable, Identifiable, Sendable {
+    case journey, stats, settings
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .journey: "Journey"
+        case .stats: "Stats"
+        case .settings: "Settings"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .journey: "map.fill"
+        case .stats: "chart.bar.fill"
+        case .settings: "gearshape.fill"
+        }
+    }
+}
+
 struct ProfileView: View {
     @Query private var profiles: [UserProfile]
     @Query private var impulseLogs: [ImpulseLog]
@@ -20,6 +39,7 @@ struct ProfileView: View {
     @State private var showPaywall = false
     @State private var showRetakeQuiz = false
     @State private var showShareCharacter = false
+    @State private var segment: ProfileSegment = .journey
     @State private var sectionAppeared: [Bool] = Array(repeating: false, count: 7)
 
     private var profile: UserProfile? { profiles.first }
@@ -70,23 +90,32 @@ struct ProfileView: View {
                 VStack(spacing: 20) {
                     profileHeroCard
                         .sectionFadeIn(index: 0, appeared: $sectionAppeared)
-                    statsGrid
+                    segmentPicker
                         .sectionFadeIn(index: 1, appeared: $sectionAppeared)
-                    journeySection
-                        .sectionFadeIn(index: 2, appeared: $sectionAppeared)
-                    shareCelebrateSection
-                        .sectionFadeIn(index: 3, appeared: $sectionAppeared)
-                    if showRecoveryContent {
-                        recoverySection
-                            .sectionFadeIn(index: 4, appeared: $sectionAppeared)
+
+                    switch segment {
+                    case .journey:
+                        journeySection
+                            .sectionFadeIn(index: 2, appeared: $sectionAppeared)
+                        shareCelebrateSection
+                            .sectionFadeIn(index: 3, appeared: $sectionAppeared)
+                    case .stats:
+                        statsGrid
+                            .sectionFadeIn(index: 2, appeared: $sectionAppeared)
+                        if showRecoveryContent {
+                            recoverySection
+                                .sectionFadeIn(index: 3, appeared: $sectionAppeared)
+                        }
+                    case .settings:
+                        premiumSection
+                            .sectionFadeIn(index: 2, appeared: $sectionAppeared)
+                        settingsLink
+                            .sectionFadeIn(index: 3, appeared: $sectionAppeared)
                     }
-                    premiumSection
-                        .sectionFadeIn(index: 5, appeared: $sectionAppeared)
-                    settingsLink
-                        .sectionFadeIn(index: 6, appeared: $sectionAppeared)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 80)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: segment)
             }
             .background(
                 ZStack {
@@ -144,6 +173,45 @@ struct ProfileView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+    }
+
+    // MARK: - Segment Picker
+
+    private var segmentPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(ProfileSegment.allCases) { option in
+                let selected = option == segment
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        segment = option
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: option.icon)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(option.title)
+                            .font(Typography.labelMedium)
+                    }
+                    .foregroundStyle(selected ? Theme.buttonTextOnAccent : Theme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Group {
+                            if selected {
+                                Capsule().fill(Theme.accentGradient)
+                            } else {
+                                Capsule().fill(Color.clear)
+                            }
+                        }
+                    )
+                }
+                .buttonStyle(.plain)
+                .sensoryFeedback(.selection, trigger: segment)
+            }
+        }
+        .padding(4)
+        .background(Theme.elevated, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 0.5))
     }
 
     // MARK: - Profile Hero Card
