@@ -26,6 +26,9 @@ struct SplurjWalletView: View {
     var onConnectPlaid: () -> Void = {}
     var onOpenProfile: () -> Void = {}
     var onTapTool: (ToolAction) -> Void = { _ in }
+    var onTapBudget: (String) -> Void = { _ in }
+    var onLogAvoided: () -> Void = {}
+    var onLogGaveIn: () -> Void = {}
 
     @State private var segment: WalletSeg = .activity
 
@@ -108,6 +111,8 @@ struct SplurjWalletView: View {
     private var connectedBody: some View {
         VStack(spacing: 16) {
             heroCard
+            quickActionRow
+                .padding(.horizontal, 22)
             segmented
                 .padding(.horizontal, 22)
             Group {
@@ -118,6 +123,40 @@ struct SplurjWalletView: View {
                 }
             }
             .padding(.horizontal, 22)
+        }
+    }
+
+    // MARK: - Quick action row (Log Avoided / I Gave In)
+
+    private var quickActionRow: some View {
+        HStack(spacing: 10) {
+            Button(action: onLogAvoided) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("Log a win")
+                        .font(.system(size: 13, weight: .heavy))
+                }
+                .foregroundStyle(Color(hex: 0x0B1614))
+                .frame(maxWidth: .infinity, minHeight: 42)
+                .background(Theme.glow, in: Capsule())
+                .shadow(color: Theme.glow.opacity(0.35), radius: 12, y: 4)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onLogGaveIn) {
+                HStack(spacing: 8) {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("I gave in")
+                        .font(.system(size: 13, weight: .heavy))
+                }
+                .foregroundStyle(Theme.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 42)
+                .background(Theme.cardTintHi, in: Capsule())
+                .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -326,7 +365,8 @@ struct SplurjWalletView: View {
         case .sky:   Theme.sky
         case .petal: Theme.petal
         }
-        return VStack(alignment: .leading, spacing: 8) {
+        return Button { onTapBudget(row.id) } label: {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Text(row.emoji)
                     .font(.system(size: 16))
@@ -358,6 +398,8 @@ struct SplurjWalletView: View {
         .overlay(alignment: .bottom) {
             Rectangle().fill(Theme.border).frame(height: 1)
         }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Tools section

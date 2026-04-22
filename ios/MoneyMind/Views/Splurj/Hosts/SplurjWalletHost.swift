@@ -3,9 +3,11 @@ import SwiftData
 
 // MARK: - Splurj Wallet host
 //
-// Feeds real Transaction + BudgetCategory data into SplurjWalletView.
-// Groups transactions into TODAY / YESTERDAY / older sections with the
-// canonical flagged + mood tagging rules.
+// Feeds real Transaction + BudgetCategory data into SplurjWalletView
+// and routes every Tool tile, budget row, Log Win, and "I gave in"
+// action to its existing production view (BudgetAnalyticsView,
+// RecurringExpensesView, GhostBudgetView, DNSBlockingWizardView,
+// BudgetDetailSheet, LogWinSheet/WalletLogWinSheet, SpendingAutopsySheet).
 
 struct SplurjWalletHost: View {
     @Query private var profiles: [UserProfile]
@@ -14,6 +16,15 @@ struct SplurjWalletHost: View {
     @Query(sort: \BudgetCategory.sortOrder) private var budgets: [BudgetCategory]
 
     @State private var showProfile = false
+    @State private var activeTool: ToolDestination?
+    @State private var selectedBudgetID: String?
+    @State private var showLogWin = false
+    @State private var showAutopsy = false
+
+    enum ToolDestination: String, Identifiable {
+        case autoSave, coolingOff, merchantBlock, subSweep, goalVault
+        var id: String { rawValue }
+    }
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -28,7 +39,6 @@ struct SplurjWalletHost: View {
         !transactions.isEmpty || !impulseLogs.isEmpty
     }
 
-    /// Net position = total income - total expenses.
     private var netPosition: Double {
         transactions.reduce(0.0) { acc, tx in
             acc + (tx.type == TransactionType.income.rawValue ? tx.amount : -tx.amount)
@@ -38,13 +48,11 @@ struct SplurjWalletHost: View {
     private var netPositionWhole: Int { Int(netPosition.rounded(.down)) }
     private var netPositionCents: Int { Int((abs(netPosition) * 100).rounded()) % 100 }
 
-    /// Delta this calendar month = saves from ImpulseLog (deflections) + income - spend this month.
     private var deltaThisMonth: Double {
         SavingsMath.thisCalendarMonth(logs: impulseLogs)
     }
 
     private var accountCount: Int {
-        // Placeholder — until Plaid is wired, we show 1 when any data exists.
         isConnected ? 1 : 0
     }
 
@@ -53,14 +61,9 @@ struct SplurjWalletHost: View {
         let now = Date()
         let today = calendar.startOfDay(for: now)
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let tf = DateFormatter(); tf.dateFormat = "h:mm a"
+        let dayFmt = DateFormatter(); dayFmt.dateFormat = "EEE"
 
-        let tf = DateFormatter()
-        tf.dateFormat = "h:mm a"
-
-        let dayFmt = DateFormatter()
-        dayFmt.dateFormat = "EEE"
-
-        // Bucket transactions
         var buckets: [(label: String, order: Int, rows: [SplurjWalletView.ActivityRow])] = []
         func bucketIndex(for label: String, order: Int) -> Int {
             if let i = buckets.firstIndex(where: { $0.label == label }) { return i }
@@ -120,8 +123,7 @@ struct SplurjWalletHost: View {
     }
 
     private var monthLabel: String {
-        let f = DateFormatter()
-        f.dateFormat = "LLLL"
+        let f = DateFormatter(); f.dateFormat = "LLLL"
         return f.string(from: Date())
     }
 
@@ -151,12 +153,55 @@ struct SplurjWalletHost: View {
             daysLeftInMonth: daysLeftInMonth,
             onConnectPlaid: { },
             onOpenProfile: { showProfile = true },
-            onTapTool: { _ in }
+            onTapTool: { action in activeTool = toolDestination(for: action) },
+            onTapBudget: { id in selectedBudgetID = id },
+            onLogAvoided: { showLogWin = true },
+            onLogGaveIn: { showAutopsy = true }
         )
         .sheet(isPresented: $showProfile) {
             SplurjProfileHost()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showLogWin) { WalletLogWinSheet() }
+        .sheet(isPresented: $showAutopsy) { SpendingAutopsySheet() }
+        .sheet(item: $activeTool) { tool in
+            toolDestinationView(tool)
+        }
+        .sheet(item: Binding(
+            get: { selectedBudgetID.flatMap { id in budgets.first { "\($0.persistentModelID.hashValue)" == id } } },
+            set: { _ in selectedBudgetID = nil }
+        )) { budget in
+            BudgetDetailSheet(budget: budget, spent: spentForBudget(budget))
+        }
+    }
+
+    private func spentForBudget(_ budget: BudgetCategory) -> Double {
+        let calendar = Calendar.current
+        let startOfMonth = calendar.dateInterval(of: .month, for: Date())?.start ?? Date()
+        return transactions
+            .filter { $0.type == TransactionType.expense.rawValue && $0.category == budget.name && $0.date >= startOfMonth }
+            .reduce(0.0) { $0 + $1.amount }
+    }
+
+    private func toolDestination(for action: SplurjWalletView.ToolAction) -> ToolDestination {
+        switch action {
+        case .autoSave:      .autoSave
+        case .coolingOff:    .coolingOff
+        case .merchantBlock: .merchantBlock
+        case .subSweep:      .subSweep
+        case .goalVault:     .goalVault
+        }
+    }
+
+    @ViewBuilder
+    private func toolDestinationView(_ tool: ToolDestination) -> some View {
+        switch tool {
+        case .autoSave:      NavigationStack { GhostBudgetView() }
+        case .coolingOff:    NavigationStack { CoolingOffView() }
+        case .merchantBlock: NavigationStack { DNSBlockingWizardView() }
+        case .subSweep:      NavigationStack { RecurringExpensesView() }
+        case .goalVault:     NavigationStack { BudgetAnalyticsView() }
         }
     }
 
