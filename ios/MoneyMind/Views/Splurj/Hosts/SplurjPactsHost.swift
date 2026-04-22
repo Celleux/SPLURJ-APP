@@ -16,6 +16,7 @@ struct SplurjPactsHost: View {
 
     @State private var showProfile = false
     @State private var showLegacyPactsHub = false
+    @State private var openChallengeID: String?
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -89,7 +90,8 @@ struct SplurjPactsHost: View {
             historyWon: wonCount,
             historyEarned: earnedTotal,
             onNewPact: { showLegacyPactsHub = true },
-            onOpenProfile: { showProfile = true }
+            onOpenProfile: { showProfile = true },
+            onOpenPact: { id in openChallengeID = id }
         )
         .sheet(isPresented: $showProfile) {
             SplurjProfileHost()
@@ -98,6 +100,38 @@ struct SplurjPactsHost: View {
         }
         .sheet(isPresented: $showLegacyPactsHub) {
             NavigationStack { PactsView() }
+        }
+        .sheet(item: Binding(
+            get: { openChallengeID.flatMap { id in
+                activeChallenges.first { "\($0.persistentModelID.hashValue)" == id }
+            }},
+            set: { _ in openChallengeID = nil }
+        )) { challenge in
+            NavigationStack {
+                ChallengeDetailView(
+                    challengeID: challenge.inviteCode,
+                    startDate: challenge.startDate,
+                    endDate: challenge.startDate.addingTimeInterval(TimeInterval(totalDays(for: challenge) * 86_400)),
+                    dailySaveAmount: dailySave(for: challenge),
+                    currentUserID: currentUserID,
+                    challengeName: title(for: challenge),
+                    goalSavingFor: ""
+                )
+            }
+        }
+    }
+
+    private var currentUserID: String {
+        profile?.referralCode.isEmpty == false ? profile!.referralCode : "me"
+    }
+
+    private func dailySave(for challenge: SavingsChallenge) -> Double {
+        switch challenge.typeRaw.lowercased() {
+        case "week52", "week":      return challenge.totalSaved / 52
+        case "envelope100":         return 1
+        case "nospend", "no_spend": return 0
+        case "roundup":             return 0.50
+        default:                    return 1
         }
     }
 
