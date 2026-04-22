@@ -176,7 +176,6 @@ extension CopyKey {
 // user's variant from the model layer (UserProfile.splurj later) — for
 // now the caller passes it explicitly.
 
-@inlinable
-public func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
+func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
     key.resolve(for: variant)
 }
