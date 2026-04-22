@@ -271,10 +271,10 @@ struct SplurjAppIcon: View {
     }
 }
 
-// MARK: - Nav icons (5, all 24×24 stroke-based)
+// MARK: - Nav icons (6, all 24×24 stroke-based)
 
 nonisolated enum SplurjNavIcon: String, CaseIterable, Sendable {
-    case home, coach, wallet, pacts, hub
+    case home, coach, wallet, pacts, hub, profile
 }
 
 struct SplurjNavIconView: View {
@@ -285,15 +285,36 @@ struct SplurjNavIconView: View {
     var body: some View {
         Group {
             switch icon {
-            case .home:   HomeIcon()
-            case .coach:  CoachIcon()
-            case .wallet: WalletIcon()
-            case .pacts:  PactsIcon()
-            case .hub:    HubIcon()
+            case .home:    HomeIcon()
+            case .coach:   CoachIcon()
+            case .wallet:  WalletIcon()
+            case .pacts:   PactsIcon()
+            case .hub:     HubIcon()
+            case .profile: ProfileIcon()
             }
         }
         .frame(width: size, height: size)
         .foregroundStyle(color)
+    }
+}
+
+private struct ProfileIcon: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(Color.primary, lineWidth: 2)
+                .frame(width: 20, height: 20)
+            Circle()
+                .stroke(Color.primary, style: .init(lineWidth: 2, lineCap: .round))
+                .frame(width: 7, height: 7)
+                .offset(y: -3)
+            Path { p in
+                p.move(to: CGPoint(x: 6.5, y: 18))
+                p.addQuadCurve(to: CGPoint(x: 17.5, y: 18), control: CGPoint(x: 12, y: 12.5))
+            }
+            .stroke(Color.primary, style: .init(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        }
+        .accessibilityHidden(true)
     }
 }
 

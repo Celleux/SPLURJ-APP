@@ -153,27 +153,29 @@ struct SplurjTopBarAvatar<Mascot: View>: View {
 // this custom one.
 
 nonisolated enum SplurjTab: String, CaseIterable, Identifiable, Sendable {
-    case home, coach, wallet, pacts, hub
+    case home, wallet, pacts, coach, hub, profile
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .home:   "HOME"
-        case .coach:  "COACH"
-        case .wallet: "WALLET"
-        case .pacts:  "PACTS"
-        case .hub:    "HUB"
+        case .home:    "HOME"
+        case .wallet:  "WALLET"
+        case .pacts:   "PACTS"
+        case .coach:   "COACH"
+        case .hub:     "HUB"
+        case .profile: "ME"
         }
     }
 
     var navIcon: SplurjNavIcon {
         switch self {
-        case .home:   .home
-        case .coach:  .coach
-        case .wallet: .wallet
-        case .pacts:  .pacts
-        case .hub:    .hub
+        case .home:    .home
+        case .wallet:  .wallet
+        case .pacts:   .pacts
+        case .coach:   .coach
+        case .hub:     .hub
+        case .profile: .profile
         }
     }
 }

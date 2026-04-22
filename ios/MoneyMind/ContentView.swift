@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 nonisolated enum AppTab: Int, Sendable {
-    case home, coach, wallet, pacts, hub
+    case home, wallet, pacts, coach, hub, profile
 }
 
 struct ContentView: View {
@@ -22,12 +22,6 @@ struct ContentView: View {
             } label: {
                 Label { Text("Home") } icon: { SplurjNavIconView(icon: .home) }
             }
-            Tab(value: AppTab.coach) {
-                SplurjCoachHost()
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            } label: {
-                Label { Text("Coach") } icon: { SplurjNavIconView(icon: .coach) }
-            }
             Tab(value: AppTab.wallet) {
                 SplurjWalletHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -40,11 +34,23 @@ struct ContentView: View {
             } label: {
                 Label { Text("Pacts") } icon: { SplurjNavIconView(icon: .pacts) }
             }
+            Tab(value: AppTab.coach) {
+                SplurjCoachHost()
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Coach") } icon: { SplurjNavIconView(icon: .coach) }
+            }
             Tab(value: AppTab.hub) {
                 SplurjHomeHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } label: {
                 Label { Text("Hub") } icon: { SplurjNavIconView(icon: .hub) }
+            }
+            Tab(value: AppTab.profile) {
+                SplurjProfileHost()
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } label: {
+                Label { Text("Profile") } icon: { SplurjNavIconView(icon: .profile) }
             }
         }
         .tint(Theme.glow)
