@@ -647,14 +647,11 @@ struct ProfileView: View {
         }
     }
 
-    private var weekSaved: Double {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return impulseLogs.filter { $0.resisted && $0.date >= weekAgo }.reduce(0) { $0 + $1.amount }
-    }
+    private var weekSaved: Double { SavingsMath.lastSevenDays(logs: impulseLogs) }
 
     private var weekResisted: Int {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return impulseLogs.filter { $0.resisted && $0.date >= weekAgo }.count
+        return SavingsMath.countResisted(from: impulseLogs, since: weekAgo)
     }
 
     private func buildMonthlyWrappedData() -> WrappedData {
@@ -665,8 +662,8 @@ struct ProfileView: View {
         let lastMonthTx = transactions.filter { $0.transactionType == .expense && $0.date >= twoMonthsAgo && $0.date < monthAgo }
         let monthSpent = monthTx.reduce(0) { $0 + $1.amount }
         let lastMonthSpent = lastMonthTx.reduce(0) { $0 + $1.amount }
-        let monthSaved = impulseLogs.filter { $0.resisted && $0.date >= monthAgo }.reduce(0) { $0 + $1.amount }
-        let monthResisted = impulseLogs.filter { $0.resisted && $0.date >= monthAgo }.count
+        let monthSaved = SavingsMath.lastThirtyDays(logs: impulseLogs)
+        let monthResisted = SavingsMath.countResisted(from: impulseLogs, since: monthAgo)
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return WrappedData(

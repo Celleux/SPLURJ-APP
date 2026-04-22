@@ -39,20 +39,9 @@ struct WalletView: View {
         vm.effectiveTotal(profile?.totalSaved ?? 0, phantomApplied: profile?.phantomProgressApplied ?? false)
     }
 
-    private var todaySaved: Double {
-        let today = Calendar.current.startOfDay(for: Date())
-        return impulseLogs.filter { $0.resisted && $0.date >= today }.reduce(0) { $0 + $1.amount }
-    }
-
-    private var weekSaved: Double {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return impulseLogs.filter { $0.resisted && $0.date >= weekAgo }.reduce(0) { $0 + $1.amount }
-    }
-
-    private var monthSaved: Double {
-        let monthAgo = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-        return impulseLogs.filter { $0.resisted && $0.date >= monthAgo }.reduce(0) { $0 + $1.amount }
-    }
+    private var todaySaved: Double { SavingsMath.today(logs: impulseLogs) }
+    private var weekSaved: Double { SavingsMath.lastSevenDays(logs: impulseLogs) }
+    private var monthSaved: Double { SavingsMath.lastThirtyDays(logs: impulseLogs) }
 
     var body: some View {
         NavigationStack {

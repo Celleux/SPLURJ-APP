@@ -32,20 +32,11 @@ struct HomeView: View {
     }
 
     private var totalSavedThisMonth: Double {
-        let calendar = Calendar.current
-        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: Date()))!
-        return impulseLogs.filter { $0.date >= startOfMonth }.reduce(0) { $0 + $1.amount }
-    }
-
-    private var totalSavedLastMonth: Double {
-        let calendar = Calendar.current
-        let startOfThisMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: Date()))!
-        let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth)!
-        return impulseLogs.filter { $0.date >= startOfLastMonth && $0.date < startOfThisMonth }.reduce(0) { $0 + $1.amount }
+        SavingsMath.thisCalendarMonth(logs: impulseLogs)
     }
 
     private var savedDifference: Double {
-        totalSavedThisMonth - totalSavedLastMonth
+        SavingsMath.monthOverMonthDelta(logs: impulseLogs)
     }
 
     private var greetingText: String {
