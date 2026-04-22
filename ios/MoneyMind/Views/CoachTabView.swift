@@ -139,19 +139,7 @@ struct CoachTabView: View {
 
     private var impulseControlSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Image(systemName: "brain.head.profile.fill")
-                    .foregroundStyle(Theme.accent)
-                    .frame(width: 28, height: 28)
-                    .background(Theme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Text("Impulse Control")
-                    .font(Typography.headingMedium)
-                    .foregroundStyle(Theme.textPrimary)
-
-                Spacer()
-            }
+            SectionHeader(icon: "brain.head.profile.fill", title: "Impulse Control")
 
             LazyVGrid(columns: columns, spacing: 12) {
                 CoachToolCard(

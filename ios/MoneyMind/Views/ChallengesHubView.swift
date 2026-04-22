@@ -126,13 +126,7 @@ struct PactsView: View {
 
     private var activeChallengesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(Theme.warning)
-                Text("Active")
-                    .font(Typography.headingMedium)
-                    .foregroundStyle(Theme.textPrimary)
-            }
+            SectionHeader(icon: "flame.fill", title: "Active Pacts")
 
             ForEach(activeChallenges) { challenge in
                 ActiveChallengeCard(
@@ -150,13 +144,7 @@ struct PactsView: View {
 
     private var availableChallengesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "star.fill")
-                    .foregroundStyle(Theme.gold)
-                Text("Available Pacts")
-                    .font(Typography.headingMedium)
-                    .foregroundStyle(Theme.textPrimary)
-            }
+            SectionHeader(icon: "star.fill", title: "Available Pacts")
 
             ForEach(Array(ChallengeType.allCases.enumerated()), id: \.element) { index, type in
                 let alreadyActive = activeChallenges.contains { $0.challengeType == type }

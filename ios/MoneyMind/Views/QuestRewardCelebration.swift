@@ -424,6 +424,8 @@ struct QuestRewardCelebration: View {
                 .padding(.top, 4)
             }
         }
+        .padding(24)
+        .holographicSheen(isActive: !reduceMotion)
     }
 
     private var zoneChangedTo: QuestZone? {
