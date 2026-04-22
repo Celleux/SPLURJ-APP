@@ -2,6 +2,23 @@ import SwiftUI
 import SwiftData
 import PhosphorSwift
 
+nonisolated enum HubSegment: String, CaseIterable, Identifiable, Sendable {
+    case today, collection
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .today: "Today"
+        case .collection: "Collection"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .today: "sun.max.fill"
+        case .collection: "rectangle.stack.fill"
+        }
+    }
+}
+
 struct HubView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -29,10 +46,7 @@ struct HubView: View {
     @State private var completedQuestIDs: Set<String> = []
     @State private var isTabVisible: Bool = true
     @State private var cachedPlayer: PlayerProfile?
-    @State private var showBudgetAnalytics: Bool = false
-    @State private var showGhostBudget: Bool = false
-    @State private var showVibeCheck: Bool = false
-    @State private var spendingAppeared: Bool = false
+    @State private var segment: HubSegment = .today
 
     private var player: PlayerProfile {
         cachedPlayer ?? playerProfiles.first ?? PlayerProfile()
@@ -60,24 +74,31 @@ struct HubView: View {
                 VStack(spacing: 16) {
                     playerCommandBar
                         .staggerIn(index: 0)
-                    liveTicker
+                    hubSegmentPicker
+                        .padding(.horizontal, 16)
                         .staggerIn(index: 1)
-                    todaysMissions
-                        .staggerIn(index: 2)
-                    gameCards
-                        .staggerIn(index: 3)
-                    weeklyChallengeBanner
-                        .staggerIn(index: 4)
-                    unifiedProgressSection
-                        .staggerIn(index: 5)
-                    compactLeaderboard
-                        .staggerIn(index: 6)
-                    statsDashboard
-                        .staggerIn(index: 7)
-                    spendingToolsSection
-                        .staggerIn(index: 8)
+
+                    switch segment {
+                    case .today:
+                        liveTicker
+                            .staggerIn(index: 2)
+                        todaysMissions
+                            .staggerIn(index: 3)
+                        weeklyChallengeBanner
+                            .staggerIn(index: 4)
+                    case .collection:
+                        gameCards
+                            .staggerIn(index: 2)
+                        unifiedProgressSection
+                            .staggerIn(index: 3)
+                        compactLeaderboard
+                            .staggerIn(index: 4)
+                        statsDashboard
+                            .staggerIn(index: 5)
+                    }
                 }
                 .padding(.bottom, 32)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: segment)
             }
             .background(
                 ZStack {
@@ -147,9 +168,6 @@ struct HubView: View {
                     }
                 }
             }
-            .fullScreenCover(isPresented: $showBudgetAnalytics) { spendingToolWrapper { BudgetAnalyticsView() } dismissAction: { showBudgetAnalytics = false } }
-            .fullScreenCover(isPresented: $showGhostBudget) { spendingToolWrapper { GhostBudgetView() } dismissAction: { showGhostBudget = false } }
-            .fullScreenCover(isPresented: $showVibeCheck) { spendingToolWrapper { VibeCheckAnalyticsView() } dismissAction: { showVibeCheck = false } }
             .profileAvatarToolbar()
         }
     }
@@ -648,69 +666,43 @@ struct HubView: View {
         }
     }
 
-    // MARK: - Spending Tools
+    // MARK: - Segment Picker
 
-    private let spendingColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-
-    private var spendingToolsSection: some View {
-        VStack(spacing: 12) {
-            SectionHeader(icon: "dollarsign.circle.fill", title: "Spending Tools")
-                .padding(.horizontal, 20)
-
-            LazyVGrid(columns: spendingColumns, spacing: 12) {
-                HubToolCard(
-                    icon: "chart.bar.fill",
-                    title: "Budget Tracker",
-                    subtitle: "Track your spending across categories",
-                    index: 0,
-                    appeared: spendingAppeared
-                ) { showBudgetAnalytics = true }
-
-                HubToolCard(
-                    icon: "eye.trianglebadge.exclamationmark.fill",
-                    title: "Ghost Budget",
-                    subtitle: "What-if scenarios for your money",
-                    index: 1,
-                    appeared: spendingAppeared
-                ) { showGhostBudget = true }
-
-                HubToolCard(
-                    icon: "face.smiling.inverse",
-                    title: "Vibe Check",
-                    subtitle: "How do you feel about that purchase?",
-                    index: 2,
-                    appeared: spendingAppeared
-                ) { showVibeCheck = true }
-            }
-            .padding(.horizontal, 16)
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
-                spendingAppeared = true
-            }
-        }
-    }
-
-    private func spendingToolWrapper<Content: View>(@ViewBuilder content: () -> Content, dismissAction: @escaping () -> Void) -> some View {
-        NavigationStack {
-            content()
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                            dismissAction()
-                        } label: {
-                            PhIcon.x
-                                .frame(width: 16, height: 16)
-                                .foregroundStyle(Theme.textSecondary)
-                                .frame(width: 30, height: 30)
-                                .background(Theme.elevated, in: .circle)
-                        }
+    private var hubSegmentPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(HubSegment.allCases) { option in
+                let selected = option == segment
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        segment = option
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: option.icon)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(option.title)
+                            .font(Typography.labelMedium)
+                    }
+                    .foregroundStyle(selected ? Theme.buttonTextOnAccent : Theme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Group {
+                            if selected {
+                                Capsule().fill(Theme.accentGradient)
+                            } else {
+                                Capsule().fill(Color.clear)
+                            }
+                        }
+                    )
                 }
+                .buttonStyle(.plain)
+                .sensoryFeedback(.selection, trigger: segment)
+            }
         }
+        .padding(4)
+        .background(Theme.elevated, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 0.5))
     }
 
     // MARK: - Helpers
@@ -1151,48 +1143,3 @@ private struct QuickMissionSheet: View {
     }
 }
 
-// MARK: - Hub Tool Card
-
-private struct HubToolCard: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    let index: Int
-    let appeared: Bool
-    let action: () -> Void
-
-    @State private var tapped = false
-
-    var body: some View {
-        Button {
-            tapped.toggle()
-            action()
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: icon)
-                    .font(Typography.headingLarge)
-                    .foregroundStyle(Theme.iconOnAccent)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.accent, in: .rect(cornerRadius: 10))
-
-                Text(title)
-                    .font(Typography.headingSmall)
-                    .foregroundStyle(Theme.textPrimary)
-
-                Text(subtitle)
-                    .font(Typography.labelSmall)
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .splurjCard(.interactive)
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.impact(weight: .light), trigger: tapped)
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 16)
-        .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(Double(index) * 0.06), value: appeared)
-    }
-}
