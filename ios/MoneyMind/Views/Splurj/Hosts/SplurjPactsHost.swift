@@ -15,6 +15,7 @@ struct SplurjPactsHost: View {
     @Query private var participants: [ChallengeParticipant]
 
     @State private var showProfile = false
+    @State private var showLegacyPactsHub = false
 
     private var profile: UserProfile? { profiles.first }
     private var variant: SplurjVariant { profile?.splurjVariant ?? .her }
@@ -87,13 +88,16 @@ struct SplurjPactsHost: View {
             historyCompleted: completedCount,
             historyWon: wonCount,
             historyEarned: earnedTotal,
-            onNewPact: { },
+            onNewPact: { showLegacyPactsHub = true },
             onOpenProfile: { showProfile = true }
         )
         .sheet(isPresented: $showProfile) {
             SplurjProfileHost()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showLegacyPactsHub) {
+            NavigationStack { ChallengesHubView() }
         }
     }
 
