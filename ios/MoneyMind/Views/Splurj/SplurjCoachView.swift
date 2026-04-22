@@ -26,6 +26,7 @@ struct SplurjCoachView: View {
     var onACT: () -> Void = {}
     var onAICoach: () -> Void = {}
     var onDNSBlocking: () -> Void = {}
+    var onDraftPact: () -> Void = {}
     var onOpenProfile: () -> Void = {}
 
     var body: some View {
@@ -140,9 +141,18 @@ struct SplurjCoachView: View {
                 kicker: "1-SEC RULE",
                 kickerColor: Theme.sky,
                 title: "Breathe before the tap",
-                sub: "A single breath guide — inhale, pause, proceed.",
+                sub: "A single breath guide \u{2014} inhale, pause, proceed.",
                 icon: "wind",
                 action: onOneSec
+            )
+
+            coachTool(
+                kicker: "AI COACH",
+                kickerColor: Theme.sky,
+                title: "Draft a friend pact",
+                sub: "Team up with someone you trust. AI drafts the terms, you both sign.",
+                icon: "person.2.fill",
+                action: onDraftPact
             )
         }
     }

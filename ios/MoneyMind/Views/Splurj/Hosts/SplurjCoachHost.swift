@@ -13,6 +13,7 @@ struct SplurjCoachHost: View {
 
     @State private var activeTool: Tool?
     @State private var showProfile = false
+    @State private var showPactsHub = false
 
     enum Tool: String, Identifiable {
         case sos, urgeSurf, halt, coolDown, ifThen, oneSec, act, aiCoach, dnsBlocking
@@ -54,6 +55,7 @@ struct SplurjCoachHost: View {
             onACT:         { activeTool = .act },
             onAICoach:     { activeTool = .aiCoach },
             onDNSBlocking: { activeTool = .dnsBlocking },
+            onDraftPact: { showPactsHub = true },
             onOpenProfile: { showProfile = true }
         )
         .fullScreenCover(item: $activeTool) { tool in
@@ -63,6 +65,9 @@ struct SplurjCoachHost: View {
             SplurjProfileHost()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPactsHub) {
+            NavigationStack { ChallengesHubView() }
         }
     }
 
