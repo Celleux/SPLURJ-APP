@@ -13,6 +13,9 @@ import SwiftData
 struct SplurjHomeHost: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
+    @Query(filter: #Predicate<ScratchCard> { $0.scratchedAt == nil }) private var pendingCards: [ScratchCard]
+    @Query(filter: #Predicate<Achievement> { $0.typeRaw == "card" }) private var collectedCards: [Achievement]
+    @Query private var activeQuests: [DailyQuestSlot]
     @Environment(\.modelContext) private var modelContext
     @Environment(HealthKitService.self) private var healthKit
 
@@ -21,6 +24,9 @@ struct SplurjHomeHost: View {
     @State private var showUrgeSurf = false
     @State private var showCheckIn = false
     @State private var showProfile = false
+    @State private var showQuests = false
+    @State private var showVault = false
+    @State private var showCollection = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -80,7 +86,14 @@ struct SplurjHomeHost: View {
             onBed:     { showCheckIn = true },
             onOpenProfile: { showProfile = true },
             isFirstRun: isFirstRun,
-            onStartDay1Quest: { showLogWin = true }
+            onStartDay1Quest: { showLogWin = true },
+            onOpenQuests: { showQuests = true },
+            onOpenVault: { showVault = true },
+            onOpenCollection: { showCollection = true },
+            pendingCardCount: pendingCards.count,
+            collectedCardCount: collectedCards.count,
+            totalCardCount: CardDatabase.totalCards,
+            activeQuestCount: activeQuests.filter { $0.expiresAt > Date() }.count
         )
         .task {
             await healthKit.refresh()
@@ -103,6 +116,15 @@ struct SplurjHomeHost: View {
             SplurjProfileHost()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showQuests) {
+            NavigationStack { QuestHubView() }
+        }
+        .fullScreenCover(isPresented: $showVault) {
+            NavigationStack { VaultGameView() }
+        }
+        .sheet(isPresented: $showCollection) {
+            CardCollectionView()
         }
     }
 }

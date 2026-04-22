@@ -20,6 +20,13 @@ struct SplurjHomeView: View {
     var onOpenProfile: () -> Void = {}
     var isFirstRun: Bool = false
     var onStartDay1Quest: () -> Void = {}
+    var onOpenQuests: () -> Void = {}
+    var onOpenVault: () -> Void = {}
+    var onOpenCollection: () -> Void = {}
+    var pendingCardCount: Int = 0
+    var collectedCardCount: Int = 0
+    var totalCardCount: Int = 0
+    var activeQuestCount: Int = 0
 
     @State private var segment: HomeSegment = .today
     @State private var mascotMood: SlimeMood = .happy
@@ -254,15 +261,39 @@ struct SplurjHomeView: View {
                     .foregroundStyle(Theme.textSecondary)
             }
             VStack(spacing: 8) {
-                unlockRow(emoji: "\u{1F33E}", title: "Plant a wildflower", sub: "3-min box breathing · +15 XP", color: Theme.glow)
-                unlockRow(emoji: "\u{1F48E}", title: "Dew-drop meditation", sub: "5 min · calms HRV swings", color: Theme.sky)
-                unlockRow(emoji: "\u{1F390}", title: "Wind-chime (new)", sub: "Earned from Sam pact · cosmetic", color: Theme.honey)
+                unlockRow(
+                    emoji: "\u{1F5FA}",
+                    title: "Quest map",
+                    sub: activeQuestCount > 0
+                        ? "\(activeQuestCount) active · dailies, weeklies, chains"
+                        : "Dailies, weeklies, boss battles",
+                    color: Theme.glow,
+                    action: onOpenQuests
+                )
+                unlockRow(
+                    emoji: "\u{1F3B4}",
+                    title: "The Vault",
+                    sub: pendingCardCount > 0
+                        ? "\(pendingCardCount) scratch card\(pendingCardCount == 1 ? "" : "s") waiting"
+                        : "Earn cards by saving",
+                    color: Theme.honey,
+                    action: onOpenVault
+                )
+                unlockRow(
+                    emoji: "\u{1F5C2}",
+                    title: "Card collection",
+                    sub: totalCardCount > 0
+                        ? "\(collectedCardCount) / \(totalCardCount) collected"
+                        : "Your collected set",
+                    color: Theme.sky,
+                    action: onOpenCollection
+                )
             }
         }
     }
 
-    private func unlockRow(emoji: String, title: String, sub: String, color: Color) -> some View {
-        Button { } label: {
+    private func unlockRow(emoji: String, title: String, sub: String, color: Color, action: @escaping () -> Void = {}) -> some View {
+        Button(action: action) {
             HStack(spacing: 12) {
                 Text(emoji)
                     .font(.system(size: 18))
