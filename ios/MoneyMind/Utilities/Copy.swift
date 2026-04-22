@@ -152,6 +152,6 @@ extension CopyKey {
 
 // MARK: - Public API
 
-public func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
+func copy(_ key: CopyKey, for variant: SplurjVariant) -> String {
     key.resolve(for: variant)
 }

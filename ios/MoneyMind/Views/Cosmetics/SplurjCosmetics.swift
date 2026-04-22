@@ -119,7 +119,7 @@ nonisolated enum CosmeticID: String, Identifiable, CaseIterable, Sendable, Hasha
 
 // MARK: - Palettes used across cosmetics
 
-private enum ClayPalette {
+private enum CosmeticPalette {
     case leafGreen, petalPink, petalHoney, petalLavender, petalCoral, petalWhite
     case moss, stone, gold, sky, amber, night
 
@@ -200,7 +200,7 @@ private struct ClayPetal: View {
     let rx: CGFloat
     let ry: CGFloat
     var rotation: Double = 0
-    let palette: ClayPalette
+    let palette: CosmeticPalette
 
     var body: some View {
         Ellipse()
@@ -227,7 +227,7 @@ private struct MiniLeaf: View {
             p.addQuadCurve(to: CGPoint(x: 6, y: -4), control: CGPoint(x: 12, y: -14))
             p.closeSubpath()
         }
-        .fill(ClayPalette.leafGreen.gradient(radius: 12))
+        .fill(CosmeticPalette.leafGreen.gradient(radius: 12))
         .overlay(
             Path { p in
                 p.move(to: .zero)
@@ -306,7 +306,7 @@ struct SplurjCosmeticView: View {
             ForEach(0..<8, id: \.self) { i in
                 ClayPetal(cx: 32, cy: 30, rx: 5.5, ry: 10, rotation: Double(i) * 45, palette: .petalWhite)
             }
-            Circle().fill(ClayPalette.gold.gradient(radius: 6)).frame(width: 10, height: 10).offset(y: -4)
+            Circle().fill(CosmeticPalette.gold.gradient(radius: 6)).frame(width: 10, height: 10).offset(y: -4)
         }
     }
 
@@ -332,9 +332,9 @@ struct SplurjCosmeticView: View {
                 .offset(y: 7)
             ForEach(0..<5, id: \.self) { i in
                 Ellipse()
-                    .fill(ClayPalette.petalLavender.gradient(radius: 8))
+                    .fill(CosmeticPalette.petalLavender.gradient(radius: 8))
                     .frame(width: 10 - CGFloat(i) * 0.4, height: 6)
-                    .overlay(Ellipse().stroke(ClayPalette.petalLavender.dark, lineWidth: 0.6))
+                    .overlay(Ellipse().stroke(CosmeticPalette.petalLavender.dark, lineWidth: 0.6))
                     .offset(y: CGFloat(i) * 4 - 14)
             }
             MiniLeaf(x: 26, y: 46, scale: 0.4, rotation: -30)
@@ -354,7 +354,7 @@ struct SplurjCosmeticView: View {
                     palette: .petalPink
                 )
             }
-            Circle().fill(ClayPalette.gold.gradient(radius: 4)).frame(width: 6, height: 6).offset(y: -2)
+            Circle().fill(CosmeticPalette.gold.gradient(radius: 4)).frame(width: 6, height: 6).offset(y: -2)
         }
     }
 
@@ -378,7 +378,7 @@ struct SplurjCosmeticView: View {
             ForEach([-40.0, -15, 15, 40], id: \.self) { r in
                 ClayPetal(cx: 32, cy: 34, rx: 5, ry: 10, rotation: r, palette: .petalWhite)
             }
-            Ellipse().fill(ClayPalette.gold.gradient(radius: 4)).frame(width: 6, height: 4).offset(y: 2)
+            Ellipse().fill(CosmeticPalette.gold.gradient(radius: 4)).frame(width: 6, height: 4).offset(y: 2)
             // Water ripples
             Path { p in
                 p.move(to: CGPoint(x: 10, y: 48))
@@ -417,7 +417,7 @@ struct SplurjCosmeticView: View {
                            control: CGPoint(x: offset.x + 3, y: offset.y + 4))
             p.closeSubpath()
         }
-        .fill(ClayPalette.petalLavender.gradient(radius: 6))
+        .fill(CosmeticPalette.petalLavender.gradient(radius: 6))
         .overlay(
             Path { p in
                 p.move(to: CGPoint(x: offset.x - 3, y: offset.y))
@@ -427,7 +427,7 @@ struct SplurjCosmeticView: View {
                                control: CGPoint(x: offset.x + 3, y: offset.y))
                 p.addQuadCurve(to: CGPoint(x: offset.x - 3, y: offset.y),
                                control: CGPoint(x: offset.x + 3, y: offset.y + 4))
-            }.stroke(ClayPalette.petalLavender.dark, lineWidth: 0.8)
+            }.stroke(CosmeticPalette.petalLavender.dark, lineWidth: 0.8)
         )
     }
 
@@ -441,17 +441,17 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 16, y: 36), control: CGPoint(x: 32, y: 44))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.amber.gradient(radius: 20))
+            .fill(CosmeticPalette.amber.gradient(radius: 20))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 16, y: 36))
                     p.addQuadCurve(to: CGPoint(x: 48, y: 36), control: CGPoint(x: 32, y: 10))
                     p.addQuadCurve(to: CGPoint(x: 16, y: 36), control: CGPoint(x: 32, y: 44))
-                }.stroke(ClayPalette.amber.dark, lineWidth: 1)
+                }.stroke(CosmeticPalette.amber.dark, lineWidth: 1)
             )
             ForEach(0..<5, id: \.self) { i in
                 Circle()
-                    .fill(ClayPalette.amber.dark.opacity(0.5))
+                    .fill(CosmeticPalette.amber.dark.opacity(0.5))
                     .frame(width: 3.6, height: 3.6)
                     .offset(x: CGFloat(i) * 6 - 12, y: CGFloat(i % 2 == 0 ? -6 : -3))
             }
@@ -474,7 +474,7 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 12, y: 30), control: CGPoint(x: 22, y: 36))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.leafGreen.gradient(radius: 24))
+            .fill(CosmeticPalette.leafGreen.gradient(radius: 24))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 12, y: 30))
@@ -489,7 +489,7 @@ struct SplurjCosmeticView: View {
     private var monocle: some View {
         ZStack {
             Circle()
-                .strokeBorder(ClayPalette.gold.gradient(radius: 16), lineWidth: 3.5)
+                .strokeBorder(CosmeticPalette.gold.gradient(radius: 16), lineWidth: 3.5)
                 .frame(width: 28, height: 28)
                 .offset(x: 4)
             Circle()
@@ -508,17 +508,17 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 40, y: 44),
                                control: CGPoint(x: 40, y: 36))
             }
-            .stroke(ClayPalette.gold.hue, style: StrokeStyle(lineWidth: 0.8, dash: [1, 1.5]))
+            .stroke(CosmeticPalette.gold.hue, style: StrokeStyle(lineWidth: 0.8, dash: [1, 1.5]))
         }
     }
 
     private var glasses: some View {
         ZStack {
             Circle().fill(Color(hex: 0x0E1A16)).frame(width: 20, height: 20).offset(x: -12)
-            Circle().strokeBorder(ClayPalette.gold.hue, lineWidth: 2).frame(width: 20, height: 20).offset(x: -12)
+            Circle().strokeBorder(CosmeticPalette.gold.hue, lineWidth: 2).frame(width: 20, height: 20).offset(x: -12)
             Circle().fill(Color(hex: 0x0E1A16)).frame(width: 20, height: 20).offset(x: 12)
-            Circle().strokeBorder(ClayPalette.gold.hue, lineWidth: 2).frame(width: 20, height: 20).offset(x: 12)
-            Rectangle().fill(ClayPalette.gold.hue).frame(width: 4, height: 2)
+            Circle().strokeBorder(CosmeticPalette.gold.hue, lineWidth: 2).frame(width: 20, height: 20).offset(x: 12)
+            Rectangle().fill(CosmeticPalette.gold.hue).frame(width: 4, height: 2)
             Ellipse().fill(Color.white.opacity(0.35)).frame(width: 6, height: 4).offset(x: -16, y: -4)
             Ellipse().fill(Color.white.opacity(0.35)).frame(width: 6, height: 4).offset(x: 8, y: -4)
         }
@@ -535,12 +535,12 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 14, y: 26), control: CGPoint(x: 16, y: 34))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalCoral.gradient(radius: 22))
+            .fill(CosmeticPalette.petalCoral.gradient(radius: 22))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 14, y: 26))
                     p.addQuadCurve(to: CGPoint(x: 50, y: 26), control: CGPoint(x: 32, y: 22))
-                }.stroke(ClayPalette.petalCoral.dark, lineWidth: 0.8)
+                }.stroke(CosmeticPalette.petalCoral.dark, lineWidth: 0.8)
             )
             // Draped end
             Path { p in
@@ -550,7 +550,7 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 24, y: 36), control: CGPoint(x: 24, y: 44))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalCoral.gradient(radius: 12))
+            .fill(CosmeticPalette.petalCoral.gradient(radius: 12))
         }
     }
 
@@ -564,7 +564,7 @@ struct SplurjCosmeticView: View {
                 p.addLine(to: CGPoint(x: 14, y: 42))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.gold.gradient(radius: 22))
+            .fill(CosmeticPalette.gold.gradient(radius: 22))
             // Points
             Path { p in
                 p.move(to: CGPoint(x: 12, y: 34))
@@ -576,7 +576,7 @@ struct SplurjCosmeticView: View {
                 p.addLine(to: CGPoint(x: 52, y: 34))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.gold.gradient(radius: 22))
+            .fill(CosmeticPalette.gold.gradient(radius: 22))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 12, y: 34))
@@ -599,9 +599,9 @@ struct SplurjCosmeticView: View {
 
     private var stump: some View {
         ZStack {
-            Ellipse().fill(ClayPalette.stone.gradient(radius: 24))
+            Ellipse().fill(CosmeticPalette.stone.gradient(radius: 24))
                 .frame(width: 44, height: 16).offset(y: 12)
-            RoundedRectangle(cornerRadius: 3).fill(ClayPalette.stone.gradient(radius: 22))
+            RoundedRectangle(cornerRadius: 3).fill(CosmeticPalette.stone.gradient(radius: 22))
                 .frame(width: 44, height: 18).offset(y: 4)
             Ellipse().fill(Color(hex: 0xC8CCBE)).frame(width: 44, height: 12).offset(y: -4)
             // Rings
@@ -616,7 +616,7 @@ struct SplurjCosmeticView: View {
 
     private var moon: some View {
         ZStack {
-            Circle().fill(ClayPalette.petalWhite.gradient(radius: 22))
+            Circle().fill(CosmeticPalette.petalWhite.gradient(radius: 22))
                 .frame(width: 40, height: 40).offset(y: -2)
             Circle().fill(Theme.background).frame(width: 38, height: 38).offset(x: 8, y: -6)
             // Craters
@@ -645,10 +645,10 @@ struct SplurjCosmeticView: View {
 
     private var stones: some View {
         ZStack {
-            Ellipse().fill(ClayPalette.stone.gradient(radius: 14)).frame(width: 24, height: 14).offset(x: -10, y: 8)
-            Ellipse().fill(ClayPalette.stone.gradient(radius: 12)).frame(width: 20, height: 12).offset(x: 6, y: 4)
-            Ellipse().fill(ClayPalette.stone.gradient(radius: 10)).frame(width: 16, height: 10).offset(x: 16, y: 12)
-            Ellipse().fill(ClayPalette.stone.gradient(radius: 9)).frame(width: 14, height: 8).offset(x: -18, y: 16)
+            Ellipse().fill(CosmeticPalette.stone.gradient(radius: 14)).frame(width: 24, height: 14).offset(x: -10, y: 8)
+            Ellipse().fill(CosmeticPalette.stone.gradient(radius: 12)).frame(width: 20, height: 12).offset(x: 6, y: 4)
+            Ellipse().fill(CosmeticPalette.stone.gradient(radius: 10)).frame(width: 16, height: 10).offset(x: 16, y: 12)
+            Ellipse().fill(CosmeticPalette.stone.gradient(radius: 9)).frame(width: 14, height: 8).offset(x: -18, y: 16)
             // Water line
             Path { p in
                 p.move(to: CGPoint(x: 4, y: 52))
@@ -669,7 +669,7 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 38, y: 52), control: CGPoint(x: 40, y: 38))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalWhite.gradient(radius: 12))
+            .fill(CosmeticPalette.petalWhite.gradient(radius: 12))
 
             // Cap
             Path { p in
@@ -679,13 +679,13 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 12, y: 32), control: CGPoint(x: 32, y: 36))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.amber.gradient(radius: 22))
+            .fill(CosmeticPalette.amber.gradient(radius: 22))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 12, y: 32))
                     p.addQuadCurve(to: CGPoint(x: 32, y: 14), control: CGPoint(x: 14, y: 16))
                     p.addQuadCurve(to: CGPoint(x: 52, y: 32), control: CGPoint(x: 50, y: 16))
-                }.stroke(ClayPalette.amber.dark, lineWidth: 1)
+                }.stroke(CosmeticPalette.amber.dark, lineWidth: 1)
             )
             // Spots
             Circle().fill(Color(hex: 0xF5F0E4)).frame(width: 5, height: 5).offset(x: -10, y: -8)
@@ -713,14 +713,14 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 32, y: 36), control: CGPoint(x: 16, y: 38))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalLavender.gradient(radius: 14))
+            .fill(CosmeticPalette.petalLavender.gradient(radius: 14))
             Path { p in
                 p.move(to: CGPoint(x: 32, y: 32))
                 p.addQuadCurve(to: CGPoint(x: 50, y: 28), control: CGPoint(x: 46, y: 18))
                 p.addQuadCurve(to: CGPoint(x: 32, y: 36), control: CGPoint(x: 48, y: 38))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalLavender.gradient(radius: 14))
+            .fill(CosmeticPalette.petalLavender.gradient(radius: 14))
             // Body
             Capsule().fill(Color(hex: 0x2E1808)).frame(width: 3, height: 16)
             Circle().fill(Color(hex: 0x2E1808)).frame(width: 3.6, height: 3.6).offset(y: -4)
@@ -740,7 +740,7 @@ struct SplurjCosmeticView: View {
                 p.addLine(to: CGPoint(x: 30, y: 28))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.gold.gradient(radius: 24))
+            .fill(CosmeticPalette.gold.gradient(radius: 24))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 32, y: 8))
@@ -768,7 +768,7 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 32, y: 14), control: CGPoint(x: 42, y: 22))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.petalPink.gradient(radius: 20))
+            .fill(CosmeticPalette.petalPink.gradient(radius: 20))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 32, y: 14))
@@ -776,7 +776,7 @@ struct SplurjCosmeticView: View {
                     p.addQuadCurve(to: CGPoint(x: 32, y: 50), control: CGPoint(x: 28, y: 48))
                     p.addQuadCurve(to: CGPoint(x: 40, y: 36), control: CGPoint(x: 36, y: 48))
                     p.addQuadCurve(to: CGPoint(x: 32, y: 14), control: CGPoint(x: 42, y: 22))
-                }.stroke(ClayPalette.petalPink.dark, lineWidth: 1)
+                }.stroke(CosmeticPalette.petalPink.dark, lineWidth: 1)
             )
             .rotationEffect(.degrees(25))
         }
@@ -792,7 +792,7 @@ struct SplurjCosmeticView: View {
                 p.addQuadCurve(to: CGPoint(x: 32, y: 8), control: CGPoint(x: 42, y: 28))
                 p.closeSubpath()
             }
-            .fill(ClayPalette.sky.gradient(radius: 22))
+            .fill(CosmeticPalette.sky.gradient(radius: 22))
             .overlay(
                 Path { p in
                     p.move(to: CGPoint(x: 32, y: 8))
@@ -800,7 +800,7 @@ struct SplurjCosmeticView: View {
                     p.addArc(center: CGPoint(x: 32, y: 38), radius: 10,
                              startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
                     p.addQuadCurve(to: CGPoint(x: 32, y: 8), control: CGPoint(x: 42, y: 28))
-                }.stroke(ClayPalette.sky.dark, lineWidth: 1)
+                }.stroke(CosmeticPalette.sky.dark, lineWidth: 1)
             )
             Ellipse().fill(.white.opacity(0.65)).frame(width: 6, height: 12).offset(x: -4, y: -2)
             Circle().fill(.white).frame(width: 3, height: 3).offset(x: -6, y: -6)
