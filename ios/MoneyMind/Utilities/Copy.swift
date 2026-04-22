@@ -128,17 +128,17 @@ extension CopyKey {
             return "no hrv today. flying blind on mood — still with you."
 
         case .shareStreak(let days):
-            // Variant-aware: share captions reference the mascot by pronoun
+            // Variant-aware: share captions reference the mascot by name
             switch variant {
-            case .her:     return "Splurj and me \u{00B7} \(days) days"
-            case .him:     return "\(days) days with Splurj"
-            case .neutral: return "\(days)-day streak \u{00B7} Splurj"
+            case .her:     return "Splurji and me \u{00B7} \(days) days"
+            case .him:     return "\(days) days with Splurji"
+            case .neutral: return "\(days)-day streak \u{00B7} Splurji"
             }
 
         case .shareSaved(let amount):
             switch variant {
-            case .her:     return "Splurj helped me save $\(amount)"
-            case .him, .neutral: return "Splurj \u{00B7} $\(amount) saved"
+            case .her:     return "Splurji helped me save $\(amount)"
+            case .him, .neutral: return "Splurji \u{00B7} $\(amount) saved"
             }
 
         case .taglineHero:
