@@ -239,12 +239,12 @@ struct EvolutionCeremony: View {
                 .opacity(reduceMotion ? 1 : (phase > 0.3 ? 0 : (phase > 0.15 ? 1 : 0)))
 
             // Old stage scales down
-            SlimeHerStage(stage: oldStage)
+            variantStage(oldStage)
                 .scaleEffect(reduceMotion ? 0 : max(0, 1 - phase * 2))
                 .opacity(reduceMotion ? 0 : max(0, 1 - phase * 2))
 
             // New stage scales up
-            SlimeHerStage(stage: newStage)
+            variantStage(newStage)
                 .scaleEffect(reduceMotion ? 1 : max(0, min(1, (phase - 0.35) * 2.5)))
                 .opacity(reduceMotion ? 1 : max(0, min(1, (phase - 0.35) * 2.5)))
 
@@ -278,6 +278,15 @@ struct EvolutionCeremony: View {
                     onComplete()
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func variantStage(_ stage: SlimeStage) -> some View {
+        switch variant {
+        case .her:     SlimeHerStage(stage: stage)
+        case .him:     SlimeHimStage(stage: stage)
+        case .neutral: SlimeNeutralStage(stage: stage)
         }
     }
 }

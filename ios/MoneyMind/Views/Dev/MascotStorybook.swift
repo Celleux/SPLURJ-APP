@@ -13,20 +13,23 @@ import SwiftUI
 struct MascotStorybookView: View {
     @State private var selectedVariant: SplurjVariant = .her
     @State private var evolutionStage: SlimeStage = .seedling
+    @State private var selectedPersonality: SplurjPersonality? = nil
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
 
+                variantPicker
+
                 VStack(alignment: .leading, spacing: 12) {
-                    Kicker("Stages · Her")
-                    stageGrid(variant: .her)
+                    Kicker("Stages · \(selectedVariant.label)", color: selectedVariant.accent)
+                    stageGrid(variant: selectedVariant)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Kicker("Moods · Leafy · Her", color: Theme.petal)
-                    moodStrip(variant: .her, stage: .leafy)
+                    Kicker("Moods · Leafy · \(selectedVariant.label)", color: selectedVariant.accent)
+                    moodStrip(variant: selectedVariant, stage: .leafy)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -35,8 +38,13 @@ struct MascotStorybookView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Kicker("Variant seam (Chunks 3 fills Him & Neutral)", color: Theme.sky)
+                    Kicker("All 3 variants · Leafy", color: Theme.glow)
                     variantComparisonRow
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Kicker("Personality tints · Flowering", color: Theme.honey)
+                    personalityRow
                 }
 
                 Spacer(minLength: 80)
@@ -46,6 +54,49 @@ struct MascotStorybookView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Mascot storybook")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var variantPicker: some View {
+        HStack(spacing: 8) {
+            ForEach(SplurjVariant.allCases) { v in
+                Button {
+                    selectedVariant = v
+                } label: {
+                    Text(v.label.uppercased())
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .tracking(1.6)
+                        .foregroundStyle(selectedVariant == v ? Theme.background : v.accent)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(selectedVariant == v ? v.accent : v.accent.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().strokeBorder(v.accent.opacity(0.4), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var personalityRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(SplurjPersonality.allCases) { p in
+                    VStack(spacing: 8) {
+                        SplurjMascot(
+                            variant: selectedVariant,
+                            stage: .flowering,
+                            personality: p,
+                            size: 110
+                        )
+                        .frame(width: 140, height: 140)
+                        .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(p.accent.opacity(0.5), lineWidth: 1))
+                        Text(p.displayName)
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .tracking(1.2)
+                            .foregroundStyle(p.accent)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Header
@@ -190,6 +241,11 @@ struct MascotStorybookView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    @ViewBuilder
+    private func stageCardContent(variant: SplurjVariant, stage: SlimeStage) -> some View {
+        SplurjMascot(variant: variant, stage: stage, size: 130)
     }
 }
 

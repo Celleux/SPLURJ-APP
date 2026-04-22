@@ -17,14 +17,19 @@ struct SplurjMascot: View {
     var variant: SplurjVariant = .her
     var stage: SlimeStage = .leafy
     var mood: SlimeMood = .happy
+    var personality: SplurjPersonality? = nil
     var size: CGFloat = 160
     var onTap: (() -> Void)? = nil
 
     @State private var tapped = false
-    @State private var blinkAmount: Double = 0
 
     var body: some View {
         ZStack {
+            // Personality aura sits BEHIND the mascot so body reads clean.
+            if let personality {
+                PersonalityAuraOverlay(personality: personality, stage: stage)
+            }
+
             mascotArt
                 .splurjBreathing(period: mood.breathPeriod)
                 .splurjIdleSway()
@@ -33,10 +38,13 @@ struct SplurjMascot: View {
                 .overlay(sleepingDecoration)
                 .overlay(SparkleBurstOverlay(fire: $tapped))
 
-            BlinkTimer { blinkAmount = $0 }
+            // Blush tint only applies to Her (the only variant with a
+            // default pink blush to override).
+            if let personality, variant == .her {
+                PersonalityCheekTint(personality: personality)
+            }
         }
-        .frame(width: size, height: size)
-        // Scale the 160×160 canvas to the requested size.
+        .frame(width: 160, height: 160)
         .scaleEffect(size / 160)
         .frame(width: size, height: size)
         .onTapGesture {
@@ -45,19 +53,16 @@ struct SplurjMascot: View {
         }
         .drawingGroup()
         .accessibilityElement()
-        .accessibilityLabel("Splurj, stage \(stage.name), mood \(String(describing: mood))")
+        .accessibilityLabel(Self.a11yLabel(variant: variant, stage: stage, mood: mood, personality: personality))
         .accessibilityAddTraits(.isImage)
     }
 
     @ViewBuilder
     private var mascotArt: some View {
         switch variant {
-        case .her:
-            SlimeHerStage(stage: stage)
-        case .him, .neutral:
-            // Chunk 3 fills these in. For now fall back to Her silhouette
-            // so screens don't crash during iterative build-out.
-            SlimeHerStage(stage: stage)
+        case .her:     SlimeHerStage(stage: stage)
+        case .him:     SlimeHimStage(stage: stage)
+        case .neutral: SlimeNeutralStage(stage: stage)
         }
     }
 
@@ -66,6 +71,13 @@ struct SplurjMascot: View {
         if mood == .sleeping {
             SleepingZs()
         }
+    }
+
+    private static func a11yLabel(variant: SplurjVariant, stage: SlimeStage, mood: SlimeMood, personality: SplurjPersonality?) -> String {
+        var parts = ["Splurj", variant.label, stage.name]
+        if let personality { parts.append(personality.displayName) }
+        parts.append("feeling \(String(describing: mood))")
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -79,6 +91,7 @@ struct SplurjMascotWithEvolution: View {
     @Binding var stage: SlimeStage
     var variant: SplurjVariant = .her
     var mood: SlimeMood = .happy
+    var personality: SplurjPersonality? = nil
     var size: CGFloat = 160
 
     @State private var previousStage: SlimeStage?
@@ -93,11 +106,17 @@ struct SplurjMascotWithEvolution: View {
                 ) {
                     self.previousStage = nil
                 }
-                .frame(width: size, height: size)
+                .frame(width: 160, height: 160)
                 .scaleEffect(size / 160)
                 .frame(width: size, height: size)
             } else {
-                SplurjMascot(variant: variant, stage: stage, mood: mood, size: size)
+                SplurjMascot(
+                    variant: variant,
+                    stage: stage,
+                    mood: mood,
+                    personality: personality,
+                    size: size
+                )
             }
         }
         .onChange(of: stage) { oldValue, _ in
