@@ -63,6 +63,10 @@ struct SplurjHomeHost: View {
         profile?.equippedCosmetics ?? []
     }
 
+    private var isFirstRun: Bool {
+        impulseLogs.isEmpty && (profile?.currentStreak ?? 0) == 0
+    }
+
     var body: some View {
         SplurjHomeView(
             variant: variant,
@@ -74,7 +78,9 @@ struct SplurjHomeHost: View {
             onWater:   { showAddExpense = true },
             onBreathe: { showUrgeSurf = true },
             onBed:     { showCheckIn = true },
-            onOpenProfile: { showProfile = true }
+            onOpenProfile: { showProfile = true },
+            isFirstRun: isFirstRun,
+            onStartDay1Quest: { showLogWin = true }
         )
         .task {
             await healthKit.refresh()

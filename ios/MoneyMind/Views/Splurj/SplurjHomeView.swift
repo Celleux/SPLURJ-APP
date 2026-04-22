@@ -18,6 +18,8 @@ struct SplurjHomeView: View {
     var onBreathe: () -> Void = {}
     var onBed: () -> Void = {}
     var onOpenProfile: () -> Void = {}
+    var isFirstRun: Bool = false
+    var onStartDay1Quest: () -> Void = {}
 
     @State private var segment: HomeSegment = .today
     @State private var mascotMood: SlimeMood = .happy
@@ -53,18 +55,23 @@ struct SplurjHomeView: View {
                         SplurjMascotPlaceholder(variant: variant)
                     }
 
-                    segmentPicker
-                        .padding(.horizontal, 22)
+                    if isFirstRun {
+                        day1Welcome
+                            .padding(.horizontal, 22)
+                    } else {
+                        segmentPicker
+                            .padding(.horizontal, 22)
 
-                    Group {
-                        switch segment {
-                        case .today:
-                            todayContent
-                        case .collection:
-                            collectionContent
+                        Group {
+                            switch segment {
+                            case .today:
+                                todayContent
+                            case .collection:
+                                collectionContent
+                            }
                         }
+                        .padding(.horizontal, 22)
                     }
-                    .padding(.horizontal, 22)
 
                     Spacer(minLength: 120)
                 }
@@ -280,6 +287,69 @@ struct SplurjHomeView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Day 1 welcome (first-run empty state)
+
+    private var day1Welcome: some View {
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Theme.glow.opacity(0.32), .clear],
+                            center: .center, startRadius: 0, endRadius: 160
+                        )
+                    )
+                    .frame(width: 300, height: 300)
+                VStack(spacing: 0) {
+                    SplurjMascot(
+                        variant: variant,
+                        stage: .seedling,
+                        cosmetics: equippedCosmetics,
+                        size: 130
+                    )
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: 0x8F5A30), Color(hex: 0x4A2A14)],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 170, height: 28)
+                        .offset(y: -8)
+                        .shadow(color: .black.opacity(0.5), radius: 8, y: 6)
+                }
+            }
+            .padding(.top, 30)
+
+            Kicker("Day 01 · welcome", color: Theme.glow, tracking: 2.2)
+            Text(day1Title)
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Save, meditate, or keep a pact to grow. First XP drops when your bank syncs or you finish Day 1\u{2019}s quest.")
+                .font(.system(size: 13.5))
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 10)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 8) {
+                PrimaryCtaButton(title: "Start Day 1 quest", action: onStartDay1Quest)
+                GhostLinkButton(title: "Watch the 20-sec intro") { }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private var day1Title: String {
+        switch variant {
+        case .her:     "A seedling named Splurji."
+        case .him:     "A seedling named Splurji."
+        case .neutral: "Your Splurji is a seedling."
+        }
     }
 
     // MARK: - Collection
