@@ -32,8 +32,8 @@ struct ContentView: View {
                 SplurjPactsHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
-            Tab("Hub", systemImage: "square.grid.2x2.fill", value: .hub) {
-                HubView()
+            Tab("You", systemImage: "leaf.fill", value: .hub) {
+                SplurjProfileHost()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }

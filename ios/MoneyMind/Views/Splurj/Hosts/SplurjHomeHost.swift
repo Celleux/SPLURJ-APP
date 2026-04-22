@@ -3,16 +3,23 @@ import SwiftData
 
 // MARK: - Splurj Home host
 //
-// Bridges UserProfile + streak/savings data into SplurjHomeView. Replaces
-// the old HomeView as the Home tab's root — production dashboards
-// (transactions, HRV, quests) redistribute to other tabs under the
-// Copy Pack v2 design language.
+// Bridges UserProfile + streak data into SplurjHomeView and repurposes
+// the terrarium command bar as the app's primary action surface:
+//   FEED    → Log Win       (you fed the mascot with a saved dollar)
+//   WATER   → Add Expense   (tend the plot honestly)
+//   BREATHE → Urge Surf     (30-second breathing intercept)
+//   BED     → Check-in      (evening reflection)
 
 struct SplurjHomeHost: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \ImpulseLog.date, order: .reverse) private var impulseLogs: [ImpulseLog]
     @Environment(\.modelContext) private var modelContext
     @Environment(HealthKitService.self) private var healthKit
+
+    @State private var showLogWin = false
+    @State private var showAddExpense = false
+    @State private var showUrgeSurf = false
+    @State private var showCheckIn = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -61,20 +68,28 @@ struct SplurjHomeHost: View {
             personality: personality,
             stage: stage,
             level: level,
-            equippedCosmetics: equippedCosmetics
+            equippedCosmetics: equippedCosmetics,
+            onFeed:    { showLogWin = true },
+            onWater:   { showAddExpense = true },
+            onBreathe: { showUrgeSurf = true },
+            onBed:     { showCheckIn = true }
         )
         .task {
             await healthKit.refresh()
             profile?.lastOpenDate = Date()
             try? modelContext.save()
         }
+        .sheet(isPresented: $showLogWin) {
+            LogWinSheet()
+        }
+        .sheet(isPresented: $showAddExpense) {
+            AddExpenseSheet()
+        }
+        .fullScreenCover(isPresented: $showUrgeSurf) {
+            UrgeSurfView(siriTriggered: false)
+        }
+        .fullScreenCover(isPresented: $showCheckIn) {
+            SiriCheckInView()
+        }
     }
 }
-
-#if DEBUG
-#Preview("SplurjHomeHost") {
-    SplurjHomeHost()
-        .modelContainer(for: [UserProfile.self, ImpulseLog.self], inMemory: true)
-        .environment(HealthKitService.shared)
-}
-#endif

@@ -18,4 +18,9 @@ extension UserProfile {
         get { Set(equippedCosmeticIDs.compactMap { CosmeticID(rawValue: $0) }) }
         set { equippedCosmeticIDs = newValue.map(\.rawValue).sorted() }
     }
+
+    var earnedBadges: Set<BadgeID> {
+        get { Set(earnedBadgeIDs.compactMap { BadgeID(rawValue: $0) }) }
+        set { earnedBadgeIDs = newValue.map(\.rawValue).sorted() }
+    }
 }

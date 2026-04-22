@@ -13,6 +13,10 @@ struct SplurjHomeView: View {
     var level: Int = 7
     var equippedCosmetics: Set<CosmeticID> = []
     var onTabChange: ((SplurjTab) -> Void)? = nil
+    var onFeed: () -> Void = {}
+    var onWater: () -> Void = {}
+    var onBreathe: () -> Void = {}
+    var onBed: () -> Void = {}
 
     @State private var segment: HomeSegment = .today
     @State private var mascotMood: SlimeMood = .happy
@@ -390,10 +394,21 @@ struct SplurjHomeView: View {
             cmdActive = action
         }
         switch action {
-        case .feed:     needsFed = min(1.0, needsFed + 0.15); mascotMood = .celebrating
-        case .water:    needsHydrated = min(1.0, needsHydrated + 0.15); mascotMood = .happy
-        case .breathe:  mascotMood = .alert
-        case .bed:      needsRested = min(1.0, needsRested + 0.15); mascotMood = .sleeping
+        case .feed:
+            needsFed = min(1.0, needsFed + 0.15)
+            mascotMood = .celebrating
+            onFeed()
+        case .water:
+            needsHydrated = min(1.0, needsHydrated + 0.15)
+            mascotMood = .happy
+            onWater()
+        case .breathe:
+            mascotMood = .alert
+            onBreathe()
+        case .bed:
+            needsRested = min(1.0, needsRested + 0.15)
+            mascotMood = .sleeping
+            onBed()
         }
         // Revert to happy after a beat
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
