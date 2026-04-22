@@ -9,6 +9,7 @@ import SwiftUI
 struct SplurjCoachView: View {
     var variant: SplurjVariant = .her
     var level: Int = 7
+    var equippedCosmetics: Set<CosmeticID> = []
     var isAllClear: Bool = true
     var hrv: String = "68ms"
     var onOpenSOS: () -> Void = {}
@@ -42,7 +43,12 @@ struct SplurjCoachView: View {
         VStack(spacing: 22) {
             // Hero mascot + tagline
             VStack(spacing: 14) {
-                SplurjMascot(variant: variant, stage: .sprout, size: 160)
+                SplurjMascot(
+                    variant: variant,
+                    stage: .sprout,
+                    cosmetics: equippedCosmetics,
+                    size: 160
+                )
                     .padding(.top, 10)
                 Kicker("All clear · 0 alerts", color: Theme.glow)
                 Text(tagline)

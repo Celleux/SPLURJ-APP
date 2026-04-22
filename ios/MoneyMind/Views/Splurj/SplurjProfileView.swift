@@ -22,6 +22,15 @@ struct SplurjProfileView: View {
     var onOpenSettings: () -> Void = {}
     var onDismiss: (() -> Void)? = nil
 
+    @State private var activeShare: ShareTemplate? = nil
+    @State private var shareImage: UIImage? = nil
+    @State private var isSharePresented = false
+
+    enum ShareTemplate: String, Identifiable {
+        case streak, levelUp, savings
+        var id: String { rawValue }
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -32,6 +41,7 @@ struct SplurjProfileView: View {
                     }
                     heroCard
                     statsGrid
+                    shareRow
                     badgesStrip
                     journeyPreview
                     settingsLinks
@@ -40,6 +50,70 @@ struct SplurjProfileView: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 12)
             }
+        }
+        .sheet(isPresented: $isSharePresented, onDismiss: {
+            shareImage = nil
+            activeShare = nil
+        }) {
+            if let shareImage {
+                ShareSheetView(items: [shareImage])
+                    .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    // MARK: - Share row
+
+    private var shareRow: some View {
+        HStack(spacing: 8) {
+            shareButton(.streak, icon: "flame.fill", label: "Streak")
+            shareButton(.levelUp, icon: "sparkles", label: "Level up")
+            shareButton(.savings, icon: "dollarsign", label: "Saved")
+        }
+    }
+
+    private func shareButton(_ template: ShareTemplate, icon: String, label: String) -> some View {
+        Button {
+            Task { await generateAndShare(template) }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .bold))
+                Text(label)
+                    .font(.system(size: 12, weight: .heavy))
+            }
+            .foregroundStyle(Theme.textPrimary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(Theme.cardTint, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Theme.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Share \(label) card")
+    }
+
+    @MainActor
+    private func generateAndShare(_ template: ShareTemplate) async {
+        activeShare = template
+        let card: AnyView
+        switch template {
+        case .streak:
+            card = AnyView(ShareCardStreak(variant: variant, days: streak, username: "@you", size: .story))
+        case .levelUp:
+            card = AnyView(ShareCardLevelUp(variant: variant, level: level, size: .story))
+        case .savings:
+            card = AnyView(ShareCardSavings(variant: variant, amount: totalSaved, size: .story))
+        }
+        let image = SplurjShareRenderer.render(card, size: .story)
+        if let image {
+            shareImage = image
+            #if os(iOS)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            #endif
+            isSharePresented = true
         }
     }
 

@@ -60,7 +60,13 @@ struct SplurjPreviewEntry: View {
         case .onboarding:
             SplurjOnboardingFlow { _, _ in }
         case .home:
-            SplurjHomeView(variant: .her, personality: .empath, stage: .leafy, level: 7)
+            SplurjHomeView(
+                variant: .her,
+                personality: .empath,
+                stage: .leafy,
+                level: 7,
+                equippedCosmetics: [.crown, .butterfly, .firefly]
+            )
         case .pacts:
             SplurjPactsView(variant: .her, level: 7)
         case .coachAllClear:
@@ -74,7 +80,10 @@ struct SplurjPreviewEntry: View {
         case .walletConnected:
             SplurjWalletView(variant: .her, level: 7, isConnected: true)
         case .profile:
-            SplurjProfileView(onDismiss: {})
+            SplurjProfileView(
+                equippedCosmetics: [.daisy, .leafCape, .firefly],
+                onDismiss: {}
+            )
         }
     }
 }

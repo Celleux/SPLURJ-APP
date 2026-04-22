@@ -46,10 +46,13 @@ class NotificationService {
         let isSupportive = profile.notificationStyle != "minimal"
 
         if profile.morningPledgeNotif {
+            // Splurj Copy Pack voice: lowercase, first-person, friend-of-mine tone.
+            let msg = isSupportive
+                ? PushCopy.randomMessage(for: .morning)
+                : PushMessage(title: "Daily Pledge",
+                              body: "Time for your daily pledge.")
             scheduleDailyNotification(id: "morning_pledge", hour: profile.dailyPledgeTime, minute: 0,
-                title: isSupportive ? "Good Morning" : "Daily Pledge",
-                body: isSupportive ? "Start your day with intention. Your pledge is waiting." : "Time for your daily pledge.",
-                profile: profile)
+                title: msg.title, body: msg.body, profile: profile)
         }
 
         if profile.eveningReflectionNotif {
@@ -67,10 +70,13 @@ class NotificationService {
         }
 
         if profile.streakMaintenanceNotif && profile.currentStreak > 0 {
-            scheduleDailyNotification(id: "streak_maintenance", hour: 18, minute: 0,
-                title: isSupportive ? "Streak Check" : "Streak",
-                body: isSupportive ? "Your \(profile.currentStreak)-day streak is still going strong!" : "\(profile.currentStreak)-day streak active.",
-                profile: profile)
+            // Streak-risk evening nudges now pull from PushCopy §01 §streakRisk.
+            let msg = isSupportive
+                ? PushCopy.randomMessage(for: .streakRisk)
+                : PushMessage(title: "Streak",
+                              body: "\(profile.currentStreak)-day streak active.")
+            scheduleDailyNotification(id: "streak_maintenance", hour: 21, minute: 45,
+                title: msg.title, body: msg.body, profile: profile)
         }
 
         if profile.milestoneApproachingNotif {
@@ -135,14 +141,45 @@ class NotificationService {
     func celebrateSavings(amount: Double, profile: UserProfile, modelContext: ModelContext) {
         guard profile.notificationsEnabled else { return }
         let formatted = amount.formatted(.currency(code: profile.defaultCurrency).precision(.fractionLength(0)))
-        createInAppNotification(type: .savingsCelebration, title: "Nice Save!", body: "You saved \(formatted) today!", deepLink: .wallet, modelContext: modelContext)
+        // New voice — lowercase, specific numbers, first-person
+        createInAppNotification(
+            type: .savingsCelebration,
+            title: "\(formatted) deflected. proud.",
+            body: "that\u{2019}s a real day 1. i felt it.",
+            deepLink: .wallet,
+            modelContext: modelContext
+        )
     }
 
     func celebrateStreak(days: Int, profile: UserProfile, modelContext: ModelContext) {
         guard profile.notificationsEnabled else { return }
         let milestones = [3, 7, 10, 14, 21, 30, 60, 90, 100, 180, 365]
         guard milestones.contains(days) else { return }
-        createInAppNotification(type: .streakCelebration, title: "\(days)-Day Streak!", body: "\(days) days of mindful choices. Keep going!", deepLink: .home, modelContext: modelContext)
+        // Pull a celebration-bucket push from the Copy Pack; substitute the
+        // day count into the title when the message template uses it.
+        let template = PushCopy.celebration.first ?? PushMessage(
+            title: "streak \(days). \u{1F525}",
+            body: "unmistakably bigger. keep going."
+        )
+        createInAppNotification(
+            type: .streakCelebration,
+            title: "\(days) days. \u{1F525}",
+            body: template.body,
+            deepLink: .home,
+            modelContext: modelContext
+        )
+    }
+
+    /// New-voice level-up push fired by the EvolutionCeremony.
+    func celebrateLevelup(level: Int, profile: UserProfile, modelContext: ModelContext) {
+        guard profile.notificationsEnabled else { return }
+        createInAppNotification(
+            type: .streakCelebration,
+            title: "level \(level) \u{2728}",
+            body: "i\u{2019}m taller. look what we did.",
+            deepLink: .home,
+            modelContext: modelContext
+        )
     }
 
     func sendJITAINudge(dayName: String, profile: UserProfile, modelContext: ModelContext) {

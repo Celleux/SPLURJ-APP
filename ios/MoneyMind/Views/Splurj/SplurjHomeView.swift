@@ -11,6 +11,7 @@ struct SplurjHomeView: View {
     var personality: SplurjPersonality? = .builder
     var stage: SlimeStage = .leafy
     var level: Int = 7
+    var equippedCosmetics: Set<CosmeticID> = []
     var onTabChange: ((SplurjTab) -> Void)? = nil
 
     @State private var segment: HomeSegment = .today
@@ -165,7 +166,14 @@ struct SplurjHomeView: View {
                 .padding(.bottom, 18)
 
             // Mascot on stump
-            SplurjMascot(variant: variant, stage: stage, mood: mascotMood, personality: personality, size: 200) {
+            SplurjMascot(
+                variant: variant,
+                stage: stage,
+                mood: mascotMood,
+                personality: personality,
+                cosmetics: equippedCosmetics,
+                size: 200
+            ) {
                 mascotTapCount += 1
                 #if os(iOS)
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()

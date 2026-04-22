@@ -9,6 +9,7 @@ import SwiftUI
 struct SplurjWalletView: View {
     var variant: SplurjVariant = .her
     var level: Int = 1
+    var equippedCosmetics: Set<CosmeticID> = []
     var isConnected: Bool = false
     var onConnectPlaid: () -> Void = {}
 
@@ -58,7 +59,12 @@ struct SplurjWalletView: View {
 
     private var emptyBody: some View {
         VStack(spacing: 22) {
-            SplurjMascot(variant: variant, stage: .sprout, size: 180)
+            SplurjMascot(
+                variant: variant,
+                stage: .sprout,
+                cosmetics: equippedCosmetics,
+                size: 180
+            )
                 .padding(.top, 30)
             Kicker("Wallet · not connected")
             Text(emptyTitle)
